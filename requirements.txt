@@ -1,0 +1,12 @@
+transformers
+Flask 
+flask_bcrypt 
+flask_session 
+requests 
+google-auth-oauthlib 
+youtube-transcript-api
+tensorflow
+torch 
+torchvision 
+torchaudio
+tf-keras
