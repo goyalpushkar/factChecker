@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class CaptionDerivationAudio:
     def __init__(self):
-        self.properties = PropertiesReader("config.properties")
+        self.properties = PropertiesReader()
         self.db = Database()
 
     def __str__(self):
@@ -32,5 +32,5 @@ class CaptionDerivationAudio:
         '''
             Get captions from the audio.
         ''' 
-        logging.info(f"Getting captions from {audio_path} using {source}")
+        logging.info(f"get_captions: Getting captions from {audio_path} using {source}")
         

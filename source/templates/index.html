@@ -22,6 +22,9 @@
     <button onclick="loginUser()">Login</button>
 
     <button onclick="logoutUser()">Logout</button>
+
+    <a href="/oauth2authorize">Authorize with Google</a>
+
   </div>
 
   <div id="fact-check-section" style="display:none;">
@@ -29,6 +32,11 @@
     <input type="text" id="claim" placeholder="Enter your claim">
     <button onclick="checkFact()">Check Fact</button>
     <p id="result"></p>
+
+    <h2>Get Captions</h2>
+    <input type="text" id="video_url" placeholder="Enter your video URL">
+    <button onclick="getCaptions()">Get Captions</button>
+    <p id="caption_result"></p>
   </div>
 
   <script>
@@ -40,7 +48,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      alert(await response.json().message);
+      const data = await response.json();
+      alert(data.message);
     }
 
     async function loginUser() {
@@ -75,6 +84,17 @@
       });
       const data = await response.json();
       document.getElementById('result').innerText = JSON.stringify(data);
+    }
+
+    async function getCaptions() {
+      const video_url = document.getElementById('video_url').value;
+      const response = await fetch('/get_captions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_url })
+      });
+      const data = await response.json();
+      document.getElementById('caption_result').innerText = JSON.stringify(data);
     }
   </script>
 </body>
