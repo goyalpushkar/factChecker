@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class CaptionDerivationVideo:
     def __init__(self):
-        self.properties = PropertiesReader("config.properties")
+        self.properties = PropertiesReader()
         self.db = Database()
         self.authorization = Authorization()
 
@@ -82,7 +82,7 @@ class CaptionDerivationVideo:
 
             caption_tracks = data.get("items", [])
             if not caption_tracks:
-                logging.info(f"No captions found for video: {video_id}")
+                logging.info(f"get_captions_google: No captions found for video: {video_id}")
                 return "No captions found"
 
             # 2. Find the caption track for the desired language (or default to the first one)
@@ -102,7 +102,7 @@ class CaptionDerivationVideo:
 
             # 4. Return the caption text
             caption_text = response.text
-            logging.info(f"Captions {caption_text} found for video: {video_id}")
+            logging.info(f"get_captions_google: Captions {caption_text} found for video: {video_id}")
             return caption_text
 
         except requests.exceptions.HTTPError as e:

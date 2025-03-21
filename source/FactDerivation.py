@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class FactDerivation:
     def __init__(self):
-        self.properties = PropertiesReader("config.properties")
+        self.properties = PropertiesReader()
         # self.api_key = self.properties.get_property("api_key")
 
     def __str__(self):
