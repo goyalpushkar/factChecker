@@ -4,6 +4,9 @@ import requests
 import logging
 from youtube_transcript_api import YouTubeTranscriptApi
 from readProperties import PropertiesReader
+from CaptionDerivationVideo import CaptionDerivationVideo
+from CaptionDerivationAudio import CaptionDerivationAudio
+from DB import Database
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -11,53 +14,71 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class CaptionDerivation:
     def __init__(self):
         self.properties = PropertiesReader("config.properties")
+        self.db = Database()
+        self.videoCaptions = CaptionDerivationVideo()
+        self.audioCaptions = CaptionDerivationAudio()
 
     def __str__(self):
         return f"{CaptionDerivation.__name__}"
     
-    def get_captions_nlp(self, video_path):
+    def get_captions(self, video_path, source="all"):
         '''
-            Get captions from the video using the Hugging Face pipeline.
+            Get captions from the video.
         '''
-        try:
-            nlp = pipeline("video-to-text", device=0)
-            captions = nlp(video_path)
-            return captions
-        except Exception as e:
-            logging.error(f"Error getting captions: {e}")
-            return None
-    
-    def get_captions_thirdparty(self, video_path):
-        '''
-            Get captions from the video using third party app
-            https://github.com/jdepoix/youtube-transcript-api?utm_source=chatgpt.com
+        logging.info(f"Getting captions from {video_path} using {source}")
 
-            Pass in the video ID, NOT the video URL. For a video with the URL https://www.youtube.com/watch?v=12345 the ID is 12345.
-        '''
-        try:
-            video_id = video_path.split("=")[-1]
-            ytt_api = YouTubeTranscriptApi()
-            captions = ytt_api.fetch(video_id)
-            return captions.to_raw_data()   # return the value in dictionary format
-        except Exception as e:
-            logging.error(f"Error getting captions: {e}")
-            return None
-    
-    def get_captions_google(self, video_path):
-        '''
-            Get captions from the video using Google API
-            https://developers.google.com/youtube/v3/docs/captions/download?utm_source=chatgpt.com
-            https://developers.google.com/youtube/v3/guides/implementation/captions?utm_source=chatgpt.com
-        '''
-        try:
-            video_id = video_path.split("=")[-1]
-            google_api_key = self.properties.get_property("api", "google_api_key")
-            api_url = f"https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId={video_id}&key={google_api_key}"    # Replace with your own API key
-            response = requests.get(api_url)
-            response.raise_for_status()
-            data = response.json()      
-            captions = data.get("items", [])
-            return captions
-        except requests.RequestException as e:
-            logging.error(f"Error getting captions: {e}")
-            return None
+        video_id = self.videoCaptions.get_video_id(video_path)
+
+        cached_result = self.db.get_captions_cached_result(video_id)
+        if cached_result:
+            return cached_result
+
+        nlp_captions = None
+        tp_captions = None
+        google_captions = None
+
+        if source == "nlp":
+            nlp_captions = self.videoCaptions.get_captions_nlp(video_path)
+            if nlp_captions:
+                self.db.insert_captions_cache(video_id, nlp_captions)
+        elif source == "thirdparty":
+            tp_captions = self.videoCaptions.get_captions_thirdparty(video_path)
+            final_tp_captions = ""
+            for data in tp_captions:
+                final_tp_captions += data.get("text", "")
+                final_tp_captions += " "
+            tp_captions = final_tp_captions
+            
+            if tp_captions:
+                self.db.insert_captions_cache(video_id, tp_captions)
+        elif source == "google":
+            google_captions = self.videoCaptions.get_captions_google(video_path)
+
+            if google_captions:
+                self.db.insert_captions_cache(video_id, google_captions)
+        else:
+            nlp_captions = self.videoCaptions.get_captions_nlp(video_path)
+            tp_captions = self.videoCaptions.get_captions_thirdparty(video_path)
+            google_captions = self.videoCaptions.get_captions_google(video_path)
+            
+            # tp_captions = [{'text': 'this is ritesh srinivasana and welcome', 'start': 0.179, 'duration': 4.681}, 
+            #                {'text': "to my channel in this video let's look", 'start': 2.22, 'duration': 5.76}]
+            final_tp_captions = ""
+            for data in tp_captions:
+                final_tp_captions += data.get("text", "")
+                final_tp_captions += " "
+            tp_captions = final_tp_captions
+
+            # logging.info(f"Captions: {nlp_captions}, {tp_captions}, {google_captions}")
+            captions = nlp_captions if nlp_captions else "" \
+            + tp_captions if tp_captions else "" \
+            + google_captions if google_captions else ""
+
+            # logging.info(f"Captions: {captions}")
+            if captions & captions != "":
+                self.db.insert_captions_cache(video_id, captions)
+        
+        return {"nlp": nlp_captions, \
+                "thirdparty": tp_captions, \
+                "google": google_captions
+                }

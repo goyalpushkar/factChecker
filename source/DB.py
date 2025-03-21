@@ -21,6 +21,10 @@ class Database:
                     (claim_hash TEXT PRIMARY KEY, result TEXT)''')
         c.execute('''CREATE TABLE IF NOT EXISTS users
                     (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS captions
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT, video_id TEXT, captions TEXT)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS captions_cache
+                    (video_id TEXT PRIMARY KEY, captions TEXT)''')
         conn.commit()
         conn.close()
 
@@ -68,6 +72,23 @@ class Database:
         conn.close()
         return result[0] if result else None
 
+    # Insert sample facts
+    def insert_captions_cache(self, video_id, captions):
+        conn = sqlite3.connect('facts.db')
+        c = conn.cursor()
+        c.execute('INSERT OR REPLACE INTO captions_cache (video_id, captions) VALUES (?, ?)', (video_id, captions))
+        conn.commit()
+        conn.close()
+
+    # Retrieve result from cache
+    def get_captions_cached_result(self, video_id):
+        conn = sqlite3.connect('facts.db')
+        c = conn.cursor()
+        c.execute('SELECT captions FROM captions_cache WHERE video_id = ?', (video_id,))
+        result = c.fetchone()
+        conn.close()
+        return result[0] if result else None
+
     def create_user(self, username, password):
         hashed_password = self.bcrypt.generate_password_hash(password).decode('utf-8')
     
@@ -81,10 +102,10 @@ class Database:
             return jsonify({"message": "User created", "status_code": 201})
         except sqlite3.IntegrityError as e:
             logging.error(f"Error creating user {username}: {e}")
-            return jsonify({"error": "User already exists", "status_code": 400})
+            return jsonify({"message": "User already exists", "status_code": 400})
         except Exception as e:
             logging.error(f"Error creating user {username}: {e}")
-            return jsonify({"error": "Internal Server Error", "status_code": 500})  
+            return jsonify({"message": "Internal Server Error", "status_code": 500})  
         finally:
             conn.close()
 
