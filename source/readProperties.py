@@ -5,13 +5,16 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class PropertiesReader:
-    def __init__(self, file_path):
+    def __init__(self, file_path=None):
         """
         Initializes the PropertiesReader with the path to the properties file.
 
         Args:
             file_path (str): The path to the properties file.
         """
+        if file_path is None:
+            file_path = "/Users/pgoyal/Documents/GitHub/factChecker/config.properties"
+
         self.file_path = file_path
         self.config = configparser.ConfigParser()
         self.load_properties()
@@ -23,12 +26,12 @@ class PropertiesReader:
         try:
             with open(self.file_path, 'r') as configfile:
                 self.config.read_file(configfile)
-            logging.info(f"Successfully loaded properties from {self.file_path}")
+            logging.info(f"load_properties: Successfully loaded properties from {self.file_path}")
         except FileNotFoundError:
-            logging.error(f"Properties file not found: {self.file_path}")
+            logging.error(f"load_properties: Properties file not found: {self.file_path}")
             raise
         except configparser.Error as e:
-            logging.error(f"Error parsing properties file: {e}")
+            logging.error(f"load_properties: Error parsing properties file: {e}")
             raise
 
     def get_property(self, section, key, default=None):

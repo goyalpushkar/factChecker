@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class CaptionDerivation:
     def __init__(self):
-        self.properties = PropertiesReader("config.properties")
+        self.properties = PropertiesReader()
         self.db = Database()
         self.videoCaptions = CaptionDerivationVideo()
         self.audioCaptions = CaptionDerivationAudio()
@@ -25,7 +25,7 @@ class CaptionDerivation:
         '''
             Get captions from the video.
         '''
-        logging.info(f"Getting captions from {video_path} using {source}")
+        logging.info(f"get_captions: Getting captions from {video_path} using {source}")
 
         video_id = self.videoCaptions.get_video_id(video_path)
 
@@ -69,12 +69,12 @@ class CaptionDerivation:
                 final_tp_captions += " "
             tp_captions = final_tp_captions
 
-            # logging.info(f"Captions: {nlp_captions}, {tp_captions}, {google_captions}")
+            # logging.info(f"get_captions: Captions: {nlp_captions}, {tp_captions}, {google_captions}")
             captions = nlp_captions if nlp_captions else "" \
             + tp_captions if tp_captions else "" \
             + google_captions if google_captions else ""
 
-            # logging.info(f"Captions: {captions}")
+            # logging.info(f"get_captions: Captions: {captions}")
             if captions & captions != "":
                 self.db.insert_captions_cache(video_id, captions)
         
