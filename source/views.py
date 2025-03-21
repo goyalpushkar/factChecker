@@ -1,18 +1,19 @@
 # Fact Checker Application - Full Stack with Front-End Interface
 
 # Import necessary libraries
-from flask import Flask, request, jsonify, session, render_template
+import os
+from flask import Flask, redirect, request, jsonify, session, render_template, url_for
 from transformers import pipeline
 import requests
-import sqlite3
-import hashlib
 import logging
 from flask_bcrypt import Bcrypt
 from flask_session import Session
 from DB import Database
 from FactDerivation import FactDerivation
 from CaptionDerivation import CaptionDerivation
+from Authorization import Authorization
 from readProperties import PropertiesReader
+from google_auth_oauthlib.flow import Flow
 
 # Create a Flask application
 app = Flask(__name__)
@@ -51,6 +52,9 @@ captionDerivation = CaptionDerivation()
 # Get Fact Derivation
 factDerivation = FactDerivation()
 
+# Get Authorizations
+authorization = Authorization()
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -65,11 +69,12 @@ def register():
         return jsonify({"error": "Invalid input"}), 400
 
     result = db.create_user(username, password)
-    
-    if result.status_code == 201:
-        return jsonify({"message": "User registered successfully"}), 201
-    else:
-        return jsonify({"error": "User already exists"}), 400
+    logging.info(f"User registration result: {result}")
+    return result
+    # if result.status_code == 201:
+    #     return jsonify({"message": "User registered successfully"}), 201
+    # else:
+    #     return jsonify({"error": "User already exists"}), 400
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -89,13 +94,6 @@ def login():
 def logout():
     session.pop('user', None)
     return jsonify({"message": "Logout successful"})
-
-@app.route('/get_captions', methods=['POST'])
-def get_captions():
-    data = request.json
-    video_url = data.get("video_url")
-    retrieved_captions = captionDerivation.get_captions_nlp(video_url) 
-    return jsonify({"message": f"Captions extracted - {retrieved_captions}"})   
 
 @app.route('/check', methods=['POST'])
 def fact_check():
@@ -132,6 +130,59 @@ def fact_check():
     analysis = nlp(claim)
     db.cache_result(claim, str(analysis))
     return jsonify({"claim": claim, "analysis": analysis})
+
+@app.route('/get_captions', methods=['POST'])
+def get_captions():
+    if 'user' not in session:
+        return jsonify({"error": "Unauthorized access"}), 401
+
+    data = request.json
+    video_url = data.get("video_url")
+
+    if not video_url:
+        logging.warning("No video url provided")
+        return jsonify({"error": "No video url provided"}), 400
+
+    logging.info(f"Checking caption: {video_url}")
+
+    captions = captionDerivation.get_captions(video_url, "google")
+    return jsonify({"captions": captions})
+
+@app.route("/oauth2authorize")
+def oauth2authorize():
+    """
+    Redirect the user to Google's authorization page.
+    """
+    state = os.urandom(16).hex()
+    authorization_url, state = authorization.get_flow_credentials(request, state).authorization_url(
+        access_type="offline",  # Request a refresh token
+        include_granted_scopes="true",
+        state=state
+    )
+    session["state"] = state
+    logging.info(f"Authorization URL: {authorization_url}")
+    return redirect(authorization_url)
+
+@app.route("/oauth2callback")
+def oauth2callback():
+    """
+    Handle the callback from Google after the user grants permission.
+    """
+    state = None
+    logging.info(f"Request: {request}\n State: {state} \n Session: {session}")
+    if "state" in session:
+        state = session["state"]
+    credentials = authorization.get_flow_credentials(request, state)
+
+    session["credentials"] = {
+        "token": credentials.token,
+        "refresh_token": credentials.refresh_token,
+        "token_uri": credentials.token_uri,
+        "client_id": credentials.client_id,
+        "client_secret": credentials.client_secret,
+        "scopes": credentials.scopes,
+    }
+    return redirect(url_for("home"))
 
 if __name__ == '__main__':
     # Database = Database()
