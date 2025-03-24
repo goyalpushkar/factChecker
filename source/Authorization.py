@@ -12,9 +12,19 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class Authorization:
     def __init__(self):
+<<<<<<< HEAD
         self.properties = PropertiesReader("config.properties")
         # Allow insecure transport for local development
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+=======
+        self.properties = PropertiesReader()
+        # Allow insecure transport for local development
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+        self.client_secret_file = self.properties.get_property("api", "client_secret_file")
+        self.scopes=['https://www.googleapis.com/auth/youtube.readonly']
+        # "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"
+        self.redirect_uri='http://localhost:5000/oauth2callback'
+>>>>>>> 768d2650c4473ead92ca03e7daa9b8582db199a5
 
     def __str__(self):
         return f"{Authorization.__name__}"
@@ -38,9 +48,7 @@ class Authorization:
         # )
     
         credentials_data = json.loads(credentials_data)
-
         return Credentials.from_authorized_user_info(credentials_data)
-
 
     def get_authorized_session(self, credentials):
         """
@@ -49,31 +57,64 @@ class Authorization:
         authorized_session = AuthorizedSession(credentials)
         return authorized_session
 
-    def get_flow_credentials(self, request, state):
+    def get_flow(self):
+        """Creates and returns a Flow object for OAuth 2.0."""
+        logging.info("get_flow: Client secret file: %s", self.client_secret_file)
+        logging.info("get_flow: Scopes: %s", self.scopes)
+        logging.info("get_flow: Redirect URI: %s", self.redirect_uri)
+
+        return Flow.from_client_secrets_file(
+            self.client_secret_file,
+            scopes=self.scopes,
+            redirect_uri=self.redirect_uri
+        )
+
+    def get_authurl_state(self, request):
         """
         Authorizes the user and stores the credentials in the session.
         """
-        client_secret_file = self.properties.get_property("api", "client_secret_file")
-        logging.info(f"Client secret file: {client_secret_file}\n"\
-                     f"Request: {request}\n"\
-                     f"State: {state}\n"\
-                     f"  request.args: {request.args} \n" \
-                     f"  request.url: {request.url}")
-        flow = Flow.from_client_secrets_file(
-            client_secret_file,
-            scopes=['https://www.googleapis.com/auth/youtube.readonly'],
-            redirect_uri='http://localhost:5000/oauth2callback'
+        
+        logging.info("get_authurl_state: Client secret file: %s\nRequest: %s\n  request.args: %s\n  request.url: %s",
+                    self.client_secret_file, request, request.args, request.url)
+        flow = self.get_flow()
+        logging.info("get_authurl_state: flow: %s\n", flow)
+        authorization_url, state = flow.authorization_url(
+            access_type="offline",  # Request a refresh token
+            include_granted_scopes="true"
         )
-        logging.info(f"flow: {flow}\n")
-        try:
-            flow.fetch_token(authorization_response=request.url)
-        except Exception as e:
-            logging.error(f"Error fetching token: {e}")
-            raise
-        logging.info(f"flow.credentials: {flow.credentials.to_json}\n")
-        # session["credentials"] = flow.credentials.to_json()
-        # if not state == request.args["state"]:
-        #     return None
+        
+        # try:
+        #     flow.fetch_token(authorization_response=request.url)
+        #     logging.info("flow: %s", flow)
+        # except Exception as e:  
+        #     logging.error("Error fetching token: %s", e)
+        #     raise
+        # logging.info(f"flow.credentials: {flow.credentials.to_json}\n")
+        # # session["credentials"] = flow.credentials.to_json()
+        # # if not state == request.args["state"]:
+        # logging.info("flow.credentials: %s", flow.credentials.to_json)
+
+        # credentials = flow.credentials
+        # return credentials
+        return authorization_url, state
+    
+    def get_callback(self, request):
+        """
+            Handles the callback from the authorization server.
+        """
+        state = session["state"]
+        flow = self.get_flow()
+        flow.fetch_token(authorization_response=request.url)
+        logging.info(f"get_callback: flow.credentials: {flow.credentials.tojson}\n")
+        if not state == request.args["state"]:
+            return "State does not match!", 400
 
         credentials = flow.credentials
-        return credentials
+        session["credentials"] = {
+            "token": credentials.token,
+            "refresh_token": credentials.refresh_token,
+            "token_uri": credentials.token_uri,
+            "client_id": credentials.client_id,
+            "client_secret": credentials.client_secret,
+            "scopes": credentials.scopes,
+        }

@@ -44,7 +44,7 @@ nlp = pipeline("text-classification", model="bert-base-uncased")
 db = Database()
 
 # Get Properties
-properties = PropertiesReader("config.properties")
+properties = PropertiesReader()
 
 # Get the captions from the video
 captionDerivation = CaptionDerivation()
@@ -64,12 +64,12 @@ def register():
     data = request.json
     username = data.get("username")
     password = data.get("password")
-    logging.info(f"Registering user: {username}")
+    logging.info(f"register: Registering user: {username}")
     if not username or not password:
         return jsonify({"error": "Invalid input"}), 400
 
     result = db.create_user(username, password)
-    logging.info(f"User registration result: {result}")
+    logging.info(f"register: User registration result: {result}")
     return result
     # if result.status_code == 201:
     #     return jsonify({"message": "User registered successfully"}), 201
@@ -107,26 +107,26 @@ def fact_check():
         logging.warning("No claim provided")
         return jsonify({"error": "No claim provided"}), 400
 
-    logging.info(f"Checking claim: {claim}")
+    logging.info(f"fact_check: Checking claim: {claim}")
 
     cached_result = db.get_cached_result(claim)
     if cached_result:
-        logging.info("Cache hit")
+        logging.info("fact_check: Cache hit")
         return jsonify({"claim": claim, "result": cached_result})
 
     result = db.check_fact_db(claim)
     if result is not None:
-        logging.info("Database hit")
+        logging.info("fact_check: Database hit")
         db.cache_result(claim, str(bool(result)))
         return jsonify({"claim": claim, "truth": bool(result)})
 
     external_result = factDerivation.check_external_api(claim)
     if external_result != "Unknown":
-        logging.info("External API hit")
+        logging.info("fact_check: External API hit")
         db.cache_result(claim, external_result)
         return jsonify({"claim": claim, "external_result": external_result})
 
-    logging.info("Performing NLP analysis")
+    logging.info("fact_check: Performing NLP analysis")
     analysis = nlp(claim)
     db.cache_result(claim, str(analysis))
     return jsonify({"claim": claim, "analysis": analysis})
@@ -143,7 +143,7 @@ def get_captions():
         logging.warning("No video url provided")
         return jsonify({"error": "No video url provided"}), 400
 
-    logging.info(f"Checking caption: {video_url}")
+    logging.info(f"get_captions: Checking caption: {video_url}")
 
     captions = captionDerivation.get_captions(video_url, "google")
     return jsonify({"captions": captions})
@@ -153,14 +153,11 @@ def oauth2authorize():
     """
     Redirect the user to Google's authorization page.
     """
-    state = os.urandom(16).hex()
-    authorization_url, state = authorization.get_flow_credentials(request, state).authorization_url(
-        access_type="offline",  # Request a refresh token
-        include_granted_scopes="true",
-        state=state
-    )
+    # state = os.urandom(16).hex()
+    authorization_url, state =  authorization.get_authurl_state(request)
+    logging.info(f"oauth2authorize: Authorization URL: {authorization_url}")
     session["state"] = state
-    logging.info(f"Authorization URL: {authorization_url}")
+    
     return redirect(authorization_url)
 
 @app.route("/oauth2callback")
@@ -168,21 +165,9 @@ def oauth2callback():
     """
     Handle the callback from Google after the user grants permission.
     """
-    state = None
-    logging.info(f"Request: {request}\n State: {state} \n Session: {session}")
-    if "state" in session:
-        state = session["state"]
-    credentials = authorization.get_flow_credentials(request, state)
-
-    session["credentials"] = {
-        "token": credentials.token,
-        "refresh_token": credentials.refresh_token,
-        "token_uri": credentials.token_uri,
-        "client_id": credentials.client_id,
-        "client_secret": credentials.client_secret,
-        "scopes": credentials.scopes,
-    }
-    return redirect(url_for("home"))
+    authorization.get_callback(request)
+    logging.info("oauth2callback: Callback received")
+    return redirect(url_for("index")) # redirect(url_for("home"))
 
 if __name__ == '__main__':
     # Database = Database()

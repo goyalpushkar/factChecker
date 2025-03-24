@@ -95,6 +95,7 @@ class Database:
         conn = sqlite3.connect('facts.db')
         c = conn.cursor()
         try:
+<<<<<<< HEAD
             logging.info(f"Creating User {username}")
             c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
             conn.commit()
@@ -105,6 +106,18 @@ class Database:
             return jsonify({"message": "User already exists", "status_code": 400})
         except Exception as e:
             logging.error(f"Error creating user {username}: {e}")
+=======
+            logging.info(f"create_user: Creating User {username}")
+            c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
+            conn.commit()
+            logging.info(f"create_user: User {username} created")
+            return jsonify({"message": "User created", "status_code": 201})
+        except sqlite3.IntegrityError as e:
+            logging.error(f"create_user: Error creating user {username}: {e}")
+            return jsonify({"message": "User already exists", "status_code": 400})
+        except Exception as e:
+            logging.error(f"create_user: Error creating user {username}: {e}")
+>>>>>>> 768d2650c4473ead92ca03e7daa9b8582db199a5
             return jsonify({"message": "Internal Server Error", "status_code": 500})  
         finally:
             conn.close()
@@ -114,7 +127,11 @@ class Database:
         c = conn.cursor()
         c.execute('SELECT password FROM users WHERE username = ?', (username,))
         result = c.fetchone()
+<<<<<<< HEAD
         logging.info(f"User {username} found: {result}")
+=======
+        logging.info(f"verify_user: User {username} found: {result}")
+>>>>>>> 768d2650c4473ead92ca03e7daa9b8582db199a5
         conn.close()
         if result:
             return self.bcrypt.check_password_hash(result[0], password)
