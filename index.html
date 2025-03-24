@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fact Checker</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+  <h1>Fact Checker Application</h1>
+
+  <div id="auth-section">
+    <h2>Register</h2>
+    <input type="text" id="register-username" placeholder="Username">
+    <input type="password" id="register-password" placeholder="Password">
+    <button onclick="registerUser()">Register</button>
+
+    <h2>Login</h2>
+    <input type="text" id="login-username" placeholder="Username">
+    <input type="password" id="login-password" placeholder="Password">
+    <button onclick="loginUser()">Login</button>
+
+    <button onclick="logoutUser()">Logout</button>
+
+    <a href="/oauth2authorize">Authorize with Google</a>
+
+  </div>
+
+  <div id="fact-check-section" style="display:{% if is_authorized %}block{% else %}none{% endif %};">
+    <h2>Check a Fact</h2>
+    <input type="text" id="claim" placeholder="Enter your claim" style="width: 600px; height: 40px;">
+    <button onclick="checkFact()">Check Fact</button>
+    <p id="result"></p>
+
+    <h2>Get Captions</h2>
+    <input type="text" id="video_url" placeholder="Enter your video URL" style="width: 600px; height: 40px;">
+    <button onclick="getCaptions()">Get Captions</button>
+    <p id="caption_result"></p>
+
+    <h2>Get Factual Statements</h2>
+    <input type="text" id="caption_text" placeholder="Enter your text" style="width: 600px; height: 40px;">
+    <button onclick="getStatements()">Get Statements</button>
+    <p id="statement_result"></p>
+  </div>
+
+  <script>
+    async function registerUser() {
+      const username = document.getElementById('register-username').value;
+      const password = document.getElementById('register-password').value;
+      const response = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      alert(data.message);
+    }
+
+    async function loginUser() {
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      alert(data.message || data.error);
+      if (response.ok) {
+        document.getElementById('fact-check-section').style.display = 'block';
+      }
+    }
+
+    async function authorizedUser() {
+      const response = await fetch('/authorized', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify()
+      });
+      const data = await response.json();
+      alert(data.message || data.error);
+      if (response.ok) {
+        document.getElementById('fact-check-section').style.display = 'block';
+      }
+    }
+
+    async function logoutUser() {
+      const response = await fetch('/logout', {
+        method: 'POST'
+      });
+      alert(await response.json().message);
+      document.getElementById('fact-check-section').style.display = 'none';
+    }
+
+    async function checkFact() {
+      const claim = document.getElementById('claim').value;
+      const response = await fetch('/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claim })
+      });
+      const data = await response.json();
+      document.getElementById('result').innerText = JSON.stringify(data);
+    }
+
+    /* Testing purposes */
+    async function getCaptions() {
+      const video_url = document.getElementById('video_url').value;
+      const response = await fetch('/get_captions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_url })
+      });
+      const data = await response.json();
+      document.getElementById('caption_result').innerText = JSON.stringify(data);
+    }
+
+    async function getStatements() {
+      const caption_text = document.getElementById('caption_text').value;
+      const response = await fetch('/get_statements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption_text })
+      });
+      const data = await response.json();
+      document.getElementById('statement_result').innerText = JSON.stringify(data);
+    }
+    /* Testing purposes */
+    
+  </script>
+</body>
+</html>

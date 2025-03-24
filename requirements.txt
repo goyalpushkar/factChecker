@@ -10,3 +10,7 @@ torch
 torchvision 
 torchaudio
 tf-keras
+spacy
+nltk
+pandas
+numpy
