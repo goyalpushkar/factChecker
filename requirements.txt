@@ -10,3 +10,10 @@ torch
 torchvision 
 torchaudio
 tf-keras
+spacy
+nltk
+pandas
+numpy
+multiprocessing
+bs4
+re

@@ -1,15 +1,23 @@
 # Import necessary libraries
-from transformers import pipeline
 import requests
-import logging
 from readProperties import PropertiesReader
+from Logger import Logger
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class FactDerivation:
-    def __init__(self):
-        self.properties = PropertiesReader()
+    def __init__(self, kwargs=None):
+        if 'logger' in kwargs:
+            self.logger = kwargs['logger']
+        else:
+            self.loging = Logger()
+            self.logger = self.loging.get_logger()
+
+        if 'properties' in kwargs:
+            self.properties = kwargs['properties']
+        else:
+            self.properties = PropertiesReader(kwargs={"logger":self.logger})
         # self.api_key = self.properties.get_property("api_key")
 
     def __str__(self):
@@ -35,5 +43,5 @@ class FactDerivation:
             if claims:
                 return claims[0].get("claimReview", [{}])[0].get("textualRating", "Unknown")
         except requests.RequestException as e:
-            logging.error(f"External API error: {e}")
+            self.logger.error(f"External API error: {e}")
         return "Unknown"

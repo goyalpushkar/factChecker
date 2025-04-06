@@ -1,22 +1,27 @@
 # Import necessary libraries
-from transformers import pipeline
-import requests
-import logging
-from youtube_transcript_api import YouTubeTranscriptApi
 from readProperties import PropertiesReader
 from DB import Database
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import AuthorizedSession
-from flask import session
-
+from Logger import Logger 
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class CaptionDerivationAudio:
-    def __init__(self):
-        self.properties = PropertiesReader()
-        self.db = Database()
+    """
+    A class to derive captions from a given audio.
+    """
+    def __init__(self, kwargs=None):
+        if 'logger' in kwargs:
+            self.logger = kwargs['logger']
+        else:
+            self.loging = Logger()
+            self.logger = self.loging.get_logger()
+            
+        if 'properties' in kwargs:
+            self.properties = kwargs['properties']
+        else:
+            self.properties = PropertiesReader(kwargs={"logger":self.logger})
+        self.db = Database(kwargs={"logger":self.logger})
 
     def __str__(self):
         return f"{CaptionDerivationAudio.__name__}"
@@ -32,5 +37,5 @@ class CaptionDerivationAudio:
         '''
             Get captions from the audio.
         ''' 
-        logging.info(f"get_captions: Getting captions from {audio_path} using {source}")
+        self.logger.info(f"get_captions: Getting captions from {audio_path} using {source}")
         

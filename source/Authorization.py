@@ -1,30 +1,38 @@
 # Import necessary libraries
-import logging
+import os
 from readProperties import PropertiesReader
+from flask import json, session
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import AuthorizedSession
 from google_auth_oauthlib.flow import Flow
-from flask import json, jsonify, session
-import os
+from Logger import Logger 
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class Authorization:
-    def __init__(self):
-<<<<<<< HEAD
-        self.properties = PropertiesReader("config.properties")
-        # Allow insecure transport for local development
-        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-=======
-        self.properties = PropertiesReader()
+    def __init__(self, kwargs=None):
+        if 'logger' in kwargs:
+            self.logger = kwargs['logger']
+        else:
+            self.loging = Logger()
+            self.logger = self.loging.get_logger()
+
+        if 'properties' in kwargs:
+            self.properties = kwargs['properties']
+        else:
+            self.properties = PropertiesReader(kwargs={"logger":self.logger})
         # Allow insecure transport for local development
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
         self.client_secret_file = self.properties.get_property("api", "client_secret_file")
-        self.scopes=['https://www.googleapis.com/auth/youtube.readonly']
+        self.scopes=["https://www.googleapis.com/auth/userinfo.profile", 
+                     "https://www.googleapis.com/auth/userinfo.email", 
+                     "openid",
+                     "https://www.googleapis.com/auth/youtube.readonly"]
         # "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"
+        # "https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/youtube.readonly"
         self.redirect_uri='http://localhost:5000/oauth2callback'
->>>>>>> 768d2650c4473ead92ca03e7daa9b8582db199a5
+        
 
     def __str__(self):
         return f"{Authorization.__name__}"
@@ -35,7 +43,7 @@ class Authorization:
         """
         credentials_data = session.get("credentials")
         if not credentials_data:
-            logging.error("No credentials found in session.")
+            self.logger.error("No credentials found in session.")
             return None
 
         # return Credentials(
@@ -59,9 +67,9 @@ class Authorization:
 
     def get_flow(self):
         """Creates and returns a Flow object for OAuth 2.0."""
-        logging.info("get_flow: Client secret file: %s", self.client_secret_file)
-        logging.info("get_flow: Scopes: %s", self.scopes)
-        logging.info("get_flow: Redirect URI: %s", self.redirect_uri)
+        self.logger.info("get_flow: Client secret file: %s", self.client_secret_file)
+        self.logger.info("get_flow: Scopes: %s", self.scopes)
+        self.logger.info("get_flow: Redirect URI: %s", self.redirect_uri)
 
         return Flow.from_client_secrets_file(
             self.client_secret_file,
@@ -74,10 +82,10 @@ class Authorization:
         Authorizes the user and stores the credentials in the session.
         """
         
-        logging.info("get_authurl_state: Client secret file: %s\nRequest: %s\n  request.args: %s\n  request.url: %s",
+        self.logger.info("get_authurl_state: Client secret file: %s\nRequest: %s\n  request.args: %s\n  request.url: %s",
                     self.client_secret_file, request, request.args, request.url)
         flow = self.get_flow()
-        logging.info("get_authurl_state: flow: %s\n", flow)
+        self.logger.info("get_authurl_state: flow: %s\n", flow)
         authorization_url, state = flow.authorization_url(
             access_type="offline",  # Request a refresh token
             include_granted_scopes="true"
@@ -85,14 +93,14 @@ class Authorization:
         
         # try:
         #     flow.fetch_token(authorization_response=request.url)
-        #     logging.info("flow: %s", flow)
+        #     self.logger.info("flow: %s", flow)
         # except Exception as e:  
-        #     logging.error("Error fetching token: %s", e)
+        #     self.logger.error("Error fetching token: %s", e)
         #     raise
-        # logging.info(f"flow.credentials: {flow.credentials.to_json}\n")
+        # self.logger.info(f"flow.credentials: {flow.credentials.to_json}\n")
         # # session["credentials"] = flow.credentials.to_json()
         # # if not state == request.args["state"]:
-        # logging.info("flow.credentials: %s", flow.credentials.to_json)
+        # self.logger.info("flow.credentials: %s", flow.credentials.to_json)
 
         # credentials = flow.credentials
         # return credentials
@@ -102,19 +110,33 @@ class Authorization:
         """
             Handles the callback from the authorization server.
         """
+        self.logger.info("get_callback: Request: %s\n  request.args: %s\n  request.url: %s session['state']: %s",
+                    request, request.args, request.url, session["state"])
         state = session["state"]
         flow = self.get_flow()
         flow.fetch_token(authorization_response=request.url)
-        logging.info(f"get_callback: flow.credentials: {flow.credentials.tojson}\n")
+        self.logger.info(f"get_callback: flow.credentials: {flow.credentials}\n")
         if not state == request.args["state"]:
             return "State does not match!", 400
 
         credentials = flow.credentials
-        session["credentials"] = {
+        self.logger.info(f"get_callback: flow.credentials: {credentials.to_json()}\n")
+        # Serialize the credentials to a JSON string before storing
+        # session["credentials"] = credentials.to_json()
+        # session["credentials"] = {
+        #     "token": credentials.token,
+        #     "refresh_token": credentials.refresh_token,
+        #     "token_uri": credentials.token_uri,
+        #     "client_id": credentials.client_id,
+        #     "client_secret": credentials.client_secret,
+        #     "scopes": credentials.scopes,
+        # }
+        session["credentials"] = json.dumps({
             "token": credentials.token,
             "refresh_token": credentials.refresh_token,
             "token_uri": credentials.token_uri,
             "client_id": credentials.client_id,
             "client_secret": credentials.client_secret,
             "scopes": credentials.scopes,
-        }
+            "expiry": credentials.expiry.isoformat() + "Z" if credentials.expiry else None,
+        })

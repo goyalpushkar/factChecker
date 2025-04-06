@@ -1,24 +1,30 @@
 import configparser
-import logging
+from Logger import Logger 
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class PropertiesReader:
-    def __init__(self, file_path=None):
+    def __init__(self, file_path=None, kwargs=None):
         """
         Initializes the PropertiesReader with the path to the properties file.
 
         Args:
             file_path (str): The path to the properties file.
         """
+        if 'logger' in kwargs:
+            self.logger = kwargs['logger']
+        else:
+            self.loging = Logger()
+            self.logger = self.loging.get_logger()
+
         if file_path is None:
             file_path = "/Users/goyalpushkar/GitHub/factChecker/config.properties"
 
         self.file_path = file_path
         self.config = configparser.ConfigParser()
         self.load_properties()
-
+        
     def load_properties(self):
         """
         Loads the properties from the file.
@@ -26,12 +32,12 @@ class PropertiesReader:
         try:
             with open(self.file_path, 'r') as configfile:
                 self.config.read_file(configfile)
-            logging.info(f"load_properties: Successfully loaded properties from {self.file_path}")
+            self.logger.info(f"load_properties: Successfully loaded properties from {self.file_path}")
         except FileNotFoundError:
-            logging.error(f"load_properties: Properties file not found: {self.file_path}")
+            self.logger.error(f"load_properties: Properties file not found: {self.file_path}")
             raise
         except configparser.Error as e:
-            logging.error(f"load_properties: Error parsing properties file: {e}")
+            self.logger.error(f"load_properties: Error parsing properties file: {e}")
             raise
 
     def get_property(self, section, key, default=None):
@@ -50,10 +56,10 @@ class PropertiesReader:
             if self.config.has_section(section) and self.config.has_option(section, key):
                 return self.config.get(section, key)
             else:
-                logging.warning(f"Property '{key}' not found in section '{section}' in {self.file_path}. Returning default value: {default}")
+                self.logger.warning(f"Property '{key}' not found in section '{section}' in {self.file_path}. Returning default value: {default}")
                 return default
         except configparser.Error as e:
-            logging.error(f"Error getting property: {e}")
+            self.logger.error(f"Error getting property: {e}")
             return default
 
     def get_property_int(self, section, key, default=None):
@@ -72,13 +78,13 @@ class PropertiesReader:
             if self.config.has_section(section) and self.config.has_option(section, key):
                 return self.config.getint(section, key)
             else:
-                logging.warning(f"Property '{key}' not found in section '{section}' in {self.file_path}. Returning default value: {default}")
+                self.logger.warning(f"Property '{key}' not found in section '{section}' in {self.file_path}. Returning default value: {default}")
                 return default
         except ValueError:
-            logging.error(f"Property '{key}' in section '{section}' is not an integer. Returning default value: {default}")
+            self.logger.error(f"Property '{key}' in section '{section}' is not an integer. Returning default value: {default}")
             return default
         except configparser.Error as e:
-            logging.error(f"Error getting property: {e}")
+            self.logger.error(f"Error getting property: {e}")
             return default
 
     def get_property_boolean(self, section, key, default=None):
@@ -97,13 +103,13 @@ class PropertiesReader:
             if self.config.has_section(section) and self.config.has_option(section, key):
                 return self.config.getboolean(section, key)
             else:
-                logging.warning(f"Property '{key}' not found in section '{section}' in {self.file_path}. Returning default value: {default}")
+                self.logger.warning(f"Property '{key}' not found in section '{section}' in {self.file_path}. Returning default value: {default}")
                 return default
         except ValueError:
-            logging.error(f"Property '{key}' in section '{section}' is not a boolean. Returning default value: {default}")
+            self.logger.error(f"Property '{key}' in section '{section}' is not a boolean. Returning default value: {default}")
             return default
         except configparser.Error as e:
-            logging.error(f"Error getting property: {e}")
+            self.logger.error(f"Error getting property: {e}")
             return default
 
 # Example Usage:
