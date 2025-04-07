@@ -105,7 +105,7 @@ class CaptionDerivationVideo:
 
             # ChatGPT API to reconstruct a likely version of the intended grammar.
             captions = ytt_api.fetch(video_id)
-            self.logger.info(f"get_captions_thirdparty: captions: {captions}\n{captions.to_raw_data()} \n")
+            # self.logger.info(f"get_captions_thirdparty: captions: {captions}\n{captions.to_raw_data()} \n")
 
             # formatter = TextFormatter()
             # input_text = formatter.format_transcript(captions)

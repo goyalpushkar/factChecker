@@ -14,7 +14,7 @@ import datasets
 import en_core_web_sm
 
 import torch 
-from transformers import AutoTokenizer, AutoModelWithLMHead, AutoModelForSeq2SeqLM, PegasusForConditionalGeneration, PegasusTokenizerFast, BartTokenizer
+from transformers import AutoTokenizer, AutoModelWithLMHead, AutoModelForSeq2SeqLM, PegasusForConditionalGeneration, PegasusTokenizer, BartTokenizer
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
@@ -45,6 +45,7 @@ class SummarizedStatementDerivation:
         # tokenizer.model_max_length
         # T5 a priori, since its max input length is 512, while Bart and Pegasus can be fed with max 1024 tokens.
         self.max_tokenizer_length = 1024  # tokenizer.model_max_length
+        self.max_paraphrase_tokenizer_length = 60
         self.device = 'cuda'
         self.tensor_return_type = ReturnTensorTypes.PYTORCH
 
@@ -66,7 +67,7 @@ class SummarizedStatementDerivation:
         return final_text
     
     # generate chunks of text \ sentences <= 1024 tokens
-    def extractive_tokenization(self, text):
+    def extractive_tokenization(self, text, max_tokenizer_length=1024):
         '''
             generate array of sentences upto model max length allowed
         '''
@@ -76,7 +77,7 @@ class SummarizedStatementDerivation:
         length = 0
         for sentence in sent_tokenize(text):
             length += len(sentence)
-            if length < self.max_tokenizer_length:
+            if length < max_tokenizer_length:
                 sent.append(sentence)
             else:
                 nested.append(sent)
@@ -91,30 +92,35 @@ class SummarizedStatementDerivation:
 
         return nested
     
-    def abstractive_tokenization(self, tokenizer_input_text):
+    def abstractive_tokenization(self, tokenizer_input_text, max_tokenizer_length=1024):
         # get batches of tokens corresponding to the exact model_max_length
         # tokenizer_input_text will be an array
         # self.logger.debug(f"abstractive_tokenization: Text: {len(tokenizer_input_text)}-{tokenizer_input_text}")
         chunk_start = 0
-        chunk_end = self.max_tokenizer_length
+        chunk_end = max_tokenizer_length
         inputs_batch_lst = []
         while chunk_start <= len(tokenizer_input_text[0]):
             inputs_batch = tokenizer_input_text[0][chunk_start:chunk_end]  # get batch of n tokens
             inputs_batch = torch.unsqueeze(inputs_batch, 0)
             inputs_batch_lst.append(inputs_batch)
             # chunk_start = chunk_end
-            chunk_start += self.max_tokenizer_length
-            chunk_end += self.max_tokenizer_length
+            chunk_start += max_tokenizer_length
+            chunk_end += max_tokenizer_length
 
         # self.logger.debug(f"abstractive_tokenization: Nested: {len(inputs_batch_lst)}-{inputs_batch_lst}")
         return inputs_batch_lst
     
-    def parallel_tokenization(self, tokenization_type = TokenizationType.ABSTRACTIVE_TOKENIZATION, tokenizer_input_text=None):
-        with multiprocessing.Pool(processes=ParallelizationNumbers.FOUR) as pool:
-            if tokenization_type == TokenizationType.ABSTRACTIVE_TOKENIZATION:
-                inputs_batch_lst = pool.map(self.abstractive_tokenization, tokenizer_input_text)
-            else:
-                inputs_batch_lst = pool.map(self.extractive_tokenization, tokenizer_input_text)
+    def parallel_tokenization(self, tokenization_type = TokenizationType.ABSTRACTIVE_TOKENIZATION, tokenizer_input_text=None, max_tokenizer_length=1024):
+        # with multiprocessing.Pool(processes=ParallelizationNumbers.ONE) as pool:
+        #     if tokenization_type == TokenizationType.ABSTRACTIVE_TOKENIZATION:
+        #         inputs_batch_lst = pool.map(self.abstractive_tokenization, tokenizer_input_text)
+        #     else:
+        #         inputs_batch_lst = pool.map(self.extractive_tokenization, tokenizer_input_text)
+
+        if tokenization_type == TokenizationType.ABSTRACTIVE_TOKENIZATION:
+            inputs_batch_lst = self.abstractive_tokenization(tokenizer_input_text, max_tokenizer_length)
+        else:
+            inputs_batch_lst = self.extractive_tokenization(tokenizer_input_text)
 
         # self.logger.debug(f"parallel_tokenization: Nested: {len(inputs_batch_lst)}-{inputs_batch_lst}")
         return inputs_batch_lst
@@ -190,12 +196,13 @@ class SummarizedStatementDerivation:
             # self.logger.info(f"abstractive_summarization_online: generated_text: {len(generated_text)}-{generated_text}")
         
             # Tokenize the text, output will be a tensor format
-            inputs = tokenizer([text], return_tensors=self.tensor_return_type) # max_length=self.max_tokenizer_length, 
+            inputs = tokenizer([text], return_tensors=self.tensor_return_type)
+            # max_length=self.max_tokenizer_length, use_fast = 'False'
             self.logger.info(f"abstractive_summarization_abstract_tokens: Inputs: {len(inputs['input_ids'])}-{inputs}")
             # error with max_length=4096 IndexError: index out of range in self
 
             # Generate list of tokens based on max model length
-            inputs_batch_list = self.parallel_tokenization(tokenization_type=TokenizationType.ABSTRACTIVE_TOKENIZATION, tokenizer_input_text=inputs['input_ids'])
+            inputs_batch_list = self.parallel_tokenization(tokenization_type=TokenizationType.ABSTRACTIVE_TOKENIZATION, tokenizer_input_text=inputs['input_ids'], max_tokenizer_length=self.max_tokenizer_length)
             self.logger.debug(f"abstractive_summarization_abstract_tokens: Nested: {len(inputs_batch_list)}-{inputs_batch_list}")
 
             # Generate Summary, output will be a tensor format
@@ -233,7 +240,7 @@ class SummarizedStatementDerivation:
             summarizer = pipeline("summarization", model=self.model_name, tokenizer=tokenizer, device=self.device)
                 # , max_length=1024 , truncation=True
 
-            sentences_list = self.parallel_tokenization(tokenization_type=TokenizationType.EXTRACTIVE_TOKENIZATION, tokenizer_input_text=text)
+            sentences_list = self.parallel_tokenization(tokenization_type=TokenizationType.EXTRACTIVE_TOKENIZATION, tokenizer_input_text=text, max_tokenizer_length=self.max_tokenizer_length)
             self.logger.info(f"abstractive_summarization_extract_tokens: {len(sentences_list)}-{sentences_list}")
             summaries = []
             for sentences in sentences_list:
@@ -260,10 +267,10 @@ class SummarizedStatementDerivation:
             Paraphrase the text using the Hugging Face pipeline.
         """
         try:
-            self.logger.info(f"paraphrase_text: Get summarized_text using {self.model_name} for Text: {len(text)}-{text}")
+            self.logger.info(f"paraphrase_text: Get summarized_text using {self.paraphrase_model_name} for Text: {len(text)}-{text}")
         
             # Load the model and tokenizer
-            tokenizer = PegasusTokenizerFast.from_pretrained(self.paraphrase_model_name)
+            tokenizer = PegasusTokenizer.from_pretrained(self.paraphrase_model_name)
             paraphraser = PegasusForConditionalGeneration.from_pretrained(self.paraphrase_model_name)
 
             # Replace huge text with the text you want to summarize
@@ -284,11 +291,11 @@ class SummarizedStatementDerivation:
             # error with max_length=4096 IndexError: index out of range in self
 
             # Generate list of tokens based on max model length
-            inputs_batch_list = self.parallel_tokenization(tokenization_type=TokenizationType.ABSTRACTIVE_TOKENIZATION, tokenizer_input_text=inputs['input_ids'])
+            inputs_batch_list = self.parallel_tokenization(tokenization_type=TokenizationType.ABSTRACTIVE_TOKENIZATION, tokenizer_input_text=inputs['input_ids'], max_tokenizer_length=self.max_paraphrase_tokenizer_length)
             self.logger.debug(f"paraphrase_text: Nested: {len(inputs_batch_list)}-{inputs_batch_list}")
 
             # Generate Summary, output will be a tensor format
-            summary_id_list = [paraphraser.generate(input, num_beams=4, max_length=500, early_stopping=False) for input in inputs_batch_list]
+            summary_id_list = [paraphraser.generate(input, num_beams=4, max_length=500, early_stopping=False) for input in inputs_batch_list ]  #  argument after ** must be a mapping, not list
             self.logger.info(f"paraphrase_text: summary_id_list: {len(summary_id_list)}-{summary_id_list}")
             
             # Decode Summarized text for each summary

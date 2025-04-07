@@ -14,6 +14,8 @@ from FactDerivation import FactDerivation
 
 from readProperties import PropertiesReader
 from flask_session import Session
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Create a Flask application
 app = Flask(__name__)

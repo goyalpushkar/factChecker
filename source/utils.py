@@ -100,6 +100,7 @@ class ParallelizationNumbers():
     # Parallelization methods
     CPU_COUNT = multiprocessing.cpu_count()
     # GPU_COUNT = "gpu_count"
+    ONE = 1
     FOUR = 4
     EIGHT = 8
     SIXTEEN = 16

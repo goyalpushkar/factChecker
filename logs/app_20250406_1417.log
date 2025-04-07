@@ -1,5 +1,0 @@
-2025-04-06 14:17:50,602 | INFO | load_properties: Successfully loaded properties from /Users/goyalpushkar/GitHub/factChecker/config.properties
-2025-04-06 14:17:51,488 | INFO | Spacy model 'en_core_web_sm' loaded successfully.
-2025-04-06 14:17:51,546 | WARNING |  * Debugger is active!
-2025-04-06 14:17:51,593 | INFO |  * Debugger PIN: 771-293-416
-2025-04-06 14:17:56,344 | INFO |  * Detected change in '/Users/goyalpushkar/GitHub/factChecker/source/utils.py', reloading

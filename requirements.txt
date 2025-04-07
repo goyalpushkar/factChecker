@@ -17,3 +17,5 @@ numpy
 multiprocessing
 bs4
 re
+sentencepiece
+sacremoses
