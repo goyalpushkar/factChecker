@@ -1,0 +1,86 @@
+/* styles.css */
+body {
+    font-family: sans-serif;
+    background-color: #f0f0f0;
+}
+h1 {
+    color: blue;
+}
+
+h2 {
+    font-style: normal;
+}
+.facts {
+    color: orange;
+}
+.results {
+    color: green;
+}
+
+h4 {
+    color: royalblue
+}
+.register {
+    color: darkmagenta
+}
+.check {
+    color: royalblue
+}
+
+button{
+    background-color: #4b77a6; /* Blue */
+    border: none;
+    color: white;
+    padding: 8px 8px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 2px 2px;
+    cursor: pointer;
+
+}
+.register{
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 8px 8px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 2px 2px;
+    cursor: pointer;
+}
+/* .audio span.icon{
+    background-image: url(icons/play.png) no-repeat;
+} */
+ /* Optional: Style the button itself */
+button.audio {
+    /* Add padding, border, etc. */
+    background-color: #1250d7;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.icon_play {
+    display: inline-block; /* Or block, depending on layout needs */
+    width: 16px;          /* Set the width of your icon */
+    height: 16px;         /* Set the height of your icon */
+    background-image: url('/static/icons/play.png'); /* Path to your icon */
+    background-repeat: no-repeat;
+    background-size: cover; /* contain Or cover, or specific pixels */
+    vertical-align: middle; /* Helps align the icon with text if any */
+    /* Add margin/padding as needed */
+    margin-right: 0px; /* Example: space between icon and text if you add text later */
+}
+.icon_stop {
+    display: inline-block; /* Or block, depending on layout needs */
+    width: 16px;          /* Set the width of your icon */
+    height: 16px;         /* Set the height of your icon */
+    background-image: url('/static/icons/freeStop.png'); /* Path to your icon */
+    background-repeat: no-repeat;
+    background-size: cover; /* contain Or cover, or specific pixels */
+    vertical-align: middle; /* Helps align the icon with text if any */
+    /* Add margin/padding as needed */
+    margin-right: 0px; /* Example: space between icon and text if you add text later */
+}
