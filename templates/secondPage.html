@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fact Checker</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+  <h1>Fact Checker Application</h1>
+
+  <div id="fact-check-section" style="display:{% if is_authorized %}block{% else %}none{% endif %};">
+    <h2 class="facts">Check a Fact</h2>
+    
+    <!-- TODO: Additional validation will be done to allow only one field to be entered-->
+    <h4 class="check">You Tube video</h4>
+    <input type="text" id="youtube_video_url" placeholder="Enter You Tube video URL" style="width: 800px; height: 20px;">
+    
+    <h4 class="check">Wiki Link</h4>
+    <input type="text" id="wiki_url" placeholder="Enter Wiki URL" style="width: 800px; height: 20px;">
+    
+    <h4 class="check">Video Link</h4>
+    <input type="text" id="video_url" placeholder="Enter your video URL" style="width: 800px; height: 20px;">
+    
+    <h4>Audio Link</h4>
+    <input type="text" id="audio_url" placeholder="Enter your audio URL" style="width: 800px; height: 20px;">
+    
+    <h4 class="check">Podcast</h4>
+    <input type="text" id="podcast_url" placeholder="Enter podcast URL" style="width: 800px; height: 20px;">
+    
+    <h4 class="check">Raw Text</h4>
+    <input type="text" id="raw_text" placeholder="Enter Raw Text" style="width: 1000px; height: 60px;">
+
+    <br><br>
+    <!-- TODO: Enable only for youtube_video_url, video_url, audio_url and podcast_url -->
+    <button onclick="getCaptions()">Get Captions</button>
+    <button onclick="getSummarizedResult()">Get Summarized Result</button>
+    <button onclick="getFactualStatements()">Get Factual Statements</button>
+    <button onclick="checkFact()">Check Fact</button>
+    <br>
+
+    <button onclick="logoutUser()">Logout</button>
+    <br>
+
+  </div>
+
+  <div id="result-section" style="display:{% if is_authorized %}inline-block{% else %}none{% endif %};">
+    <h2 class="results">Result </h2>
+      <!-- TODO: Add width, height, bborder, background-color, padding, margin-->
+      <p id="final_result"></p>
+  </div>
+
+  <script>
+
+    async function logoutUser() {
+      const response = await fetch('/logout', {
+        method: 'POST'
+      });
+      alert(await response.json().message);
+      document.getElementById('fact-check-section').style.display = 'none';
+    }
+
+
+
+    /* Testing purposes */
+    async function getCaptions() {
+      const youtube_video_url = document.getElementById('youtube_video_url').value;
+      const wiki_url = document.getElementById('wiki_url').value;
+      const video_url = document.getElementById('video_url').value;
+      const audio_url = document.getElementById('audio_url').value;
+      const podcast_url = document.getElementById('podcast_url').value;
+      const raw_text = document.getElementById('raw_text').value;
+
+      const response = await fetch('/get_captions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtube_video_url, wiki_url, video_url, audio_url, podcast_url, raw_text })
+      });
+      const data = await response.json();
+      document.getElementById('final_result').innerText = JSON.stringify(data);
+    }
+
+    async function getSummarizedResult() {
+      const youtube_video_url = document.getElementById('youtube_video_url').value;
+      const wiki_url = document.getElementById('wiki_url').value;
+      const video_url = document.getElementById('video_url').value;
+      const audio_url = document.getElementById('audio_url').value;
+      const podcast_url = document.getElementById('podcast_url').value;
+      const raw_text = document.getElementById('raw_text').value;
+      
+      const response = await fetch('/get_summarization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtube_video_url, wiki_url, video_url, audio_url, podcast_url, raw_text })
+      });
+      const data = await response.json();
+      document.getElementById('final_result').innerText = JSON.stringify(data);
+    }
+
+    async function getFactualStatements() {
+      const youtube_video_url = document.getElementById('youtube_video_url').value;
+      const wiki_url = document.getElementById('wiki_url').value;
+      const video_url = document.getElementById('video_url').value;
+      const audio_url = document.getElementById('audio_url').value;
+      const podcast_url = document.getElementById('podcast_url').value;
+      const raw_text = document.getElementById('raw_text').value;
+
+      const response = await fetch('/get_statements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtube_video_url, wiki_url, video_url, audio_url, podcast_url, raw_text })
+      });
+      const data = await response.json();
+      document.getElementById('final_result').innerText = JSON.stringify(data);
+    }
+    /* Testing purposes */
+
+    async function checkFact() {
+      const youtube_video_url = document.getElementById('youtube_video_url').value;
+      const wiki_url = document.getElementById('wiki_url').value;
+      const video_url = document.getElementById('video_url').value;
+      const audio_url = document.getElementById('audio_url').value;
+      const podcast_url = document.getElementById('podcast_url').value;
+      const raw_text = document.getElementById('raw_text').value;
+
+      const response = await fetch('/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtube_video_url, wiki_url, video_url, audio_url, podcast_url, raw_text })
+      });
+      const data = await response.json();
+      document.getElementById('final_result').innerText = JSON.stringify(data);
+    }
+    
+  </script>
+</body>
+</html>
