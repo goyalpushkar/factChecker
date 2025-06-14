@@ -1,20 +1,29 @@
 # Fact Checker Application - Full Stack with Front-End Interface
+# Ensure the project root is in sys.path for absolute imports when running the script directly
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 # Import necessary libraries
-from flask import Flask, redirect, request, jsonify, session, render_template, url_for
+from flask import Flask, redirect, request, jsonify, session, render_template, url_for, send_from_directory, send_file
 from transformers import pipeline
-from DB import Database
-from Logger import Logger
-from Authorization import Authorization
-from CaptionDerivation import CaptionDerivation
-from StatementDerivation import StatementDerivation
-from SummarizedStatementDerivation import SummarizedStatementDerivation
-from utils import SourceTypes, CaptionSources, SummarizationTypes
-from FactDerivation import FactDerivation
+from source.services.lib.DB import Database
+from source.services.lib.Logger import Logger
+from source.services.lib.Authorization import Authorization
+from source.services.lib.readProperties import PropertiesReader
+from source.services.lib.utils import Utils, SourceTypes, CaptionSources, SummarizationTypes, TextToAudioSources, AvailableLanguages, AvailableCountryCodes
+from source.services.CaptionDerivation import CaptionDerivation
+from source.services.StatementDerivation import StatementDerivation
+from source.services.SummarizedStatementDerivation import SummarizedStatementDerivation
+from source.services.TextToAudio import TextToAudio
+from source.services.FactDerivation import FactDerivation
 
-from readProperties import PropertiesReader
 from flask_session import Session
 import os
+import atexit
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Create a Flask application
@@ -32,35 +41,66 @@ logger = loging.get_logger()
 # – memcached: MemcachedSessionInterface
 # – mongodb: MongoDBSessionInterface
 # – sqlalchemy: SqlAlchemySessionInterface
+app.config['SECRET_KEY'] = os.urandom(24)  # Crucial for session security
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = os.path.join(PROJECT_ROOT, 'flask_session') # Explicit session directory
 app.config['SESSION_PERMANENT'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = 600
+
+# Ensure the session directory exists
+if not os.path.exists(app.config['SESSION_FILE_DIR']):
+    os.makedirs(app.config['SESSION_FILE_DIR'])
+
 
 Session(app)
 
 # Load the NLP model
 nlp = pipeline("text-classification", model="bert-base-uncased")
 
-# Create a database instance
-db = Database(kwargs={"logger":logger})
-
 # Get Properties
 properties = PropertiesReader(kwargs={"logger":logger})
 
+# Get Utils
+utils = Utils(kwargs={"properties":properties, "logger":logger})
+
+# Create a database instance
+db = Database(kwargs={"properties":properties, "logger":logger, "utils": utils})
+
 # Get the captions from the video
-captionDerivation = CaptionDerivation(kwargs={"properties":properties, "logger":logger})
+captionDerivation = CaptionDerivation(kwargs={"properties":properties, "logger":logger, "utils": utils})
 
 # Get Statement Derivation
-statementDerivation = StatementDerivation(kwargs={"properties":properties, "logger":logger})
+statementDerivation = StatementDerivation(kwargs={"properties":properties, "logger":logger, "utils": utils})
 
 # Get Summarized Statement Derivation
-summarizedStatementDerivation = SummarizedStatementDerivation(kwargs={"properties":properties, "logger":logger})
+summarizedStatementDerivation = SummarizedStatementDerivation(kwargs={"properties":properties, "logger":logger, "utils": utils})
 
 # Get Fact Derivation
-factDerivation = FactDerivation(kwargs={"properties":properties, "logger":logger})
+factDerivation = FactDerivation(kwargs={"properties":properties, "logger":logger, "utils": utils})
+
+# Get text to audio
+textToAudio = TextToAudio(kwargs={"properties":properties, "logger":logger, "utils": utils})
 
 # Get Authorizations
-authorization = Authorization(kwargs={"properties":properties, "logger":logger})
+authorization = Authorization(kwargs={"properties":properties, "logger":logger, "utils": utils})
+
+#  Use app.teardown_appcontext for request/app-context-specific resources
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    # Example: If your Database class has a close method
+    # if hasattr(db_instance, 'close') and callable(getattr(db_instance, 'close')):
+    #     db_instance.close()
+    #     app.logger.info("Database connection closed.")
+    app.logger.info("Application context tearing down.")
+    # Add other cleanup tasks here
+
+# atexit for global application resources
+def perform_cleanup():
+    # logger.info("Application is shutting down. Performing cleanup...")
+    print("Application is shutting down. Performing cleanup...")
+    # Example: Close files, release resources, etc.
+
+atexit.register(perform_cleanup)
 
 @app.route('/')
 def home():
@@ -115,7 +155,10 @@ def login():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    session.pop('user', None)
+    # Clear all relevant session keys for a full logout
+    session.pop('user', None) # For your application's user tracking
+    session.pop('credentials', None) # For Google OAuth credentials
+    session.pop('state', None) # For OAuth state
     return jsonify({"message": "Logout successful"})
 
 @app.route('/get_captions', methods=['POST'])
@@ -126,13 +169,13 @@ def get_captions():
     data = request.json
     logger.info(f"get_captions: Checking caption: data: {data}")
     youtube_video_url = data.get("youtube_video_url")
-    wiki_url = data.get("wiki_url")
+    web_url = data.get("web_url")
     video_url = data.get("video_url")
     audio_url = data.get("audio_url")
     podcast_url = data.get("podcast_url")
     raw_text = data.get("raw_text")
 
-    if not youtube_video_url and not video_url and not audio_url and not podcast_url and not wiki_url:
+    if not youtube_video_url and not video_url and not audio_url and not podcast_url and not web_url:
         logger.warning("No url provided")
         return jsonify({"error": "No url provided"}), 400
     
@@ -149,8 +192,8 @@ def get_captions():
         captions = captionDerivation.get_captions(source_path=audio_url, source_type=SourceTypes.AUDIO, caption_source=CaptionSources.ALL)
     elif podcast_url:
         captions = captionDerivation.get_captions(source_path=podcast_url, source_type=SourceTypes.PODCAST, caption_source=CaptionSources.ALL)
-    elif wiki_url:
-        captions = captionDerivation.get_wiki_captions(source_path=wiki_url)
+    elif web_url:
+        captions = captionDerivation.get_captions(source_path=web_url, source_type=SourceTypes.WIKI)
     return jsonify({"captions": captions})
 
 @app.route('/get_summarization', methods=['POST'])
@@ -161,30 +204,34 @@ def get_summarization():
     data = request.json
     logger.info(f"get_summarization: data: {data}")
     youtube_video_url = data.get("youtube_video_url")
-    wiki_url = data.get("wiki_url")
+    web_url = data.get("web_url")
     video_url = data.get("video_url")
     audio_url = data.get("audio_url")
     podcast_url = data.get("podcast_url")
     raw_text = data.get("raw_text")
+    selectedSize = data.get("selectedSize")
 
-    if not youtube_video_url and not video_url and not audio_url and not podcast_url and not wiki_url and not raw_text:
+    if not youtube_video_url and not video_url and not audio_url and not podcast_url and not web_url and not raw_text:
         logger.warning("No text provided")
         return jsonify({"error": "No text provided"}), 400
 
     captions = None
+    paraphrasing = False
     if youtube_video_url:
         captions = captionDerivation.get_captions(source_path=youtube_video_url, source_type=SourceTypes.YOUTUBE, caption_source=CaptionSources.ALL)
+        # paraphrasing = True
     elif video_url:
         captions = captionDerivation.get_captions(source_path=video_url, source_type=SourceTypes.VIDEO, caption_source=CaptionSources.ALL)
     elif audio_url:
         captions = captionDerivation.get_captions(source_path=audio_url, source_type=SourceTypes.AUDIO, caption_source=CaptionSources.ALL)
     elif podcast_url:
         captions = captionDerivation.get_captions(source_path=podcast_url, source_type=SourceTypes.PODCAST, caption_source=CaptionSources.ALL)
-    elif wiki_url:
-        captions = captionDerivation.get_wiki_captions(source_path=wiki_url)
+    elif web_url:
+        captions = captionDerivation.get_captions(source_path=web_url, source_type=SourceTypes.WIKI)
         # captions = all_captions["wikicontent"]
     elif raw_text:
         captions = raw_text
+        paraphrasing = True
 
     logger.info(f"get_summarization: captions: {captions}")
     if not captions:
@@ -192,7 +239,7 @@ def get_summarization():
         return jsonify({"error": "Not able to get captions/ transcript for Summarization"}), 400
 
     # Get summarizd text
-    summarized_text = summarizedStatementDerivation.get_summarized_statements(captions, summary_type=SummarizationTypes.ABSTRACTIVE_SUMMARY)
+    summarized_text = summarizedStatementDerivation.get_summarized_statements(captions, summary_type=SummarizationTypes.ABSTRACTIVE_SUMMARY, parapharizing=paraphrasing, selectedSize=selectedSize)
     return jsonify({"summarized_text": summarized_text})
 
 @app.route('/get_statements', methods=['POST'])
@@ -203,13 +250,13 @@ def get_statements():
     data = request.json
     logger.info(f"get_statements: data: {data}")
     youtube_video_url = data.get("youtube_video_url")
-    wiki_url = data.get("wiki_url")
+    web_url = data.get("web_url")
     video_url = data.get("video_url")
     audio_url = data.get("audio_url")
     podcast_url = data.get("podcast_url")
     raw_text = data.get("raw_text")
 
-    if not youtube_video_url and not video_url and not audio_url and not podcast_url and not wiki_url and not raw_text:
+    if not youtube_video_url and not video_url and not audio_url and not podcast_url and not web_url and not raw_text:
         logger.warning("No text provided")
         return jsonify({"error": "No text provided"}), 400
 
@@ -222,8 +269,9 @@ def get_statements():
         captions = captionDerivation.get_captions(source_path=audio_url, source_type=SourceTypes.AUDIO, caption_source=CaptionSources.ALL)
     elif podcast_url:
         captions = captionDerivation.get_captions(source_path=podcast_url, source_type=SourceTypes.PODCAST, caption_source=CaptionSources.ALL)
-    elif wiki_url:
-        captions = captionDerivation.get_wiki_url_text(wiki_url)
+    elif web_url:
+        captions = captionDerivation.get_captions(source_path=web_url, source_type=SourceTypes.WIKI)
+        # get_web_url_text(web_url)
     elif raw_text:
         captions = raw_text
 
@@ -271,6 +319,50 @@ def fact_check():
     db.cache_result(claim, str(analysis))
     return jsonify({"claim": claim, "analysis": analysis})
 
+@app.route('/text_to_speech', methods=['POST'])
+def text_to_speech():
+    data = request.json
+    logger.info(f"text_to_speech: data: {data}")
+    text_for_speech = data.get("text")
+    action = data.get("action")
+
+    if not text_for_speech:
+        logger.warning("No text provided")
+        return jsonify({"error": "No text provided"}), 400
+
+    speech_path = None
+    if text_for_speech:
+        speech_path = textToAudio.getAudio(text=text_for_speech, source=TextToAudioSources.GTTS, language=AvailableLanguages.ENGLISH, countryCode=AvailableCountryCodes.US, action=action)
+        # , source=TextToAudioSources.GTTS, language=AvailableLanguages.ENGLISH
+    # logger.info(f"text_to_speech: speech_path: {speech_path}")
+
+    if speech_path:
+        # to send path from audioFiles folder onwards
+        speech_path = textToAudio.get_file_without_folder_name(speech_path)
+    
+    logger.info(f"text_to_speech: speech_path: {speech_path}")
+    return jsonify({"speech_path": speech_path})
+
+# Serve files from the audioFiles directory
+@app.route('/audioFilesDirectory/<path:filename>')
+def serve_audio(filename):
+    logger.info(f"serve_audio: filename: {filename}")
+    # if "audioFiles" in filename:
+    #     filename = filename.split("audioFilesDirectory/")[-1]
+    folder_path = properties.get_property("folders", "audio_directory")
+    # logger.info(f"serve_audio: folder_path: {folder_path}") 
+    # Check if the file exists in the audioFiles directory
+    file_path = os.path.join(folder_path, filename)
+    logger.info(f"serve_audio: file_path: {file_path}")
+    if not os.path.exists(file_path):
+        logger.error(f"serve_audio: File not found: {file_path}")
+        return jsonify({"error": "File not found"}), 404
+    # Serve the file using send_from_directory
+    # send_from_directory is used to serve files from a specific directory
+    # It takes the directory path and the filename as arguments
+    # return send_from_directory(folder_path, filename, mimetype='audio/wav')
+    return send_file(f'{file_path}', mimetype='audio/wav')
+
 # User clicks "Authorize with Google" on index.html.
 # oauth2authorize route is called, which redirects to Google's authorization page.
 # User grants permission on Google's page.
@@ -307,3 +399,4 @@ def authorized():
 if __name__ == '__main__':
     # Database = Database()
     app.run(debug=True)
+    # app.run(host='0.0.0.0', port=5000, debug=True)

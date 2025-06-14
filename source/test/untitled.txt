@@ -1,0 +1,12 @@
+curl -X POST -H "Content-Type: application/json" -d '{"videoUrl": "https://www.youtube.com/watch?v=LEDpgye3bf4"}' http://localhost:3000/api/captions/videoCaptions
+
+
+npm config set python /path/to/your/python3
+# or for node-gyp directly
+npm_config_python=/path/to/your/python3 npm install <package_name>
+# or
+node-gyp configure --python /path/to/your/python3
+
+
+export PATH=$(pwd)/node_modules/.bin:$PATH
+   npm install # or your failing npm command

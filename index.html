@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ...existing code... -->
+</head>
+<body>
+    <!-- ...existing code... -->
+
+    <h2>Select a Size</h2>
+    <select id="sizeSelector" onchange="updateSelectedSize()">
+        <option value="">Select a size</option>
+        <option value="small">Small</option>
+        <option value="medium" selected>Medium</option>
+        <option value="large">Large</option>
+    </select>
+    <p id="selectedSizeDisplay">Selected Size: Small</p>
+
+    <script>
+        function updateSelectedSize() {
+            // Get the selected size
+            const selectedSize = document.getElementById('sizeSelector').value;
+
+            // Update the UI with the selected size
+            const sizeDisplay = document.getElementById('selectedSizeDisplay');
+            sizeDisplay.textContent = `Selected Size: ${selectedSize || "None"}`;
+        }
+    </script>
+
+    <!-- ...existing code... -->
+</body>
+</html>

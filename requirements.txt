@@ -19,3 +19,9 @@ bs4
 re
 sentencepiece
 sacremoses
+gTTS
+pyttsx3
+playsound
+readability-lxml
+lxml
+lxml_html_clean
