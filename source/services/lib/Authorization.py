@@ -8,6 +8,8 @@ import json
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import AuthorizedSession
 from google_auth_oauthlib.flow import Flow
+import google_auth_oauthlib.flow
+from googleapiclient.discovery import build
 
 # Configure logging
 # logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -31,7 +33,8 @@ class Authorization:
         self.scopes=["https://www.googleapis.com/auth/userinfo.profile", 
                      "https://www.googleapis.com/auth/userinfo.email", 
                      "openid",
-                     "https://www.googleapis.com/auth/youtube.readonly"]
+                     "https://www.googleapis.com/auth/youtube.readonly",
+                     "https://www.googleapis.com/auth/youtube.force-ssl"]
         # "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"
         # "https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/youtube.readonly"
         self.redirect_uri='http://localhost:5000/oauth2callback'
@@ -90,6 +93,19 @@ class Authorization:
             scopes=self.scopes,
             redirect_uri=self.redirect_uri
         )
+    
+    def get_server_authenticated_service(self):
+        '''
+            # Get an authenticated YouTube service object using OAuth 2.0 credentials.
+            # This method is typically used for server-side applications.
+            # It uses the InstalledAppFlow to handle the OAuth 2.0 authorization flow.
+            # The method returns a YouTube service object that can be used to make API calls.
+        '''
+        flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+                                self.client_secret_file,
+                                scopes=self.scopes,)
+        credentials = flow.run_local_server(port=0)
+        return build('youtube', 'v3', credentials=credentials)
 
     def get_authurl_state(self, request):
         """

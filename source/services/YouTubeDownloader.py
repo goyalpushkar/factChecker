@@ -58,7 +58,7 @@ class YouTubeDownloader:
         try:
             output_dir = self.download_directory
             self.logger.info(f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
-                            f"download_youtube_audio_pytube: output_dir - %s", output_dir
+                            f"download_youtube_audio_pytube: output_dir - {output_dir}"
                             f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
             yt = YouTube(video_url)
 
@@ -112,7 +112,7 @@ class YouTubeDownloader:
         try:
             output_dir = self.download_directory
             self.logger.info(f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
-                            "download_youtube_video_tubedl: output_dir - %s", output_dir
+                            f"download_youtube_video_tubedl: output_dir - {output_dir}"
                             f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
         
             if video_id is None:

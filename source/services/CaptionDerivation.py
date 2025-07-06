@@ -111,15 +111,19 @@ class CaptionDerivation:
             
             return tp_captions  
         elif caption_source == CaptionSources.GOOGLE:
-            google_captions = self.video_captions.get_captions_google(video_path)
-
+            # google_captions = self.video_captions.get_captions_google(video_path)
+            google_captions = self.video_captions.get_captions_downloadAudio(video_path)
+        
             # Temp Comment
             # if google_captions:
             #     self.db.insert_captions_cache(video_id, google_captions)
 
             return google_captions
         elif caption_source == CaptionSources.DOWNLOAD:
-            downloaded_captions = self.video_captions.get_captions_downloadAudio(video_path)
+            downloaded_captions = self.video_captions.get_captions_downloadCaptions(video_path)
+
+            if not downloaded_captions:
+                downloaded_captions = self.video_captions.get_captions_downloadAudio(video_path)
 
             # Temp Comment
             # if google_captions:
@@ -130,7 +134,7 @@ class CaptionDerivation:
             try:
                 nlp_captions = self.video_captions.get_captions_nlp(video_path)
             except Exception as e:
-                self.logger.error(f"Error getting captions: {e}")
+                self.logger.error(f"Error getting captions get_captions_nlp: {e}")
             
             if not nlp_captions:
                 try:
@@ -144,19 +148,26 @@ class CaptionDerivation:
                         final_tp_captions += ""
                     tp_captions = final_tp_captions
                 except Exception as e:
-                    self.logger.error(f"get_video_captions: Error getting captions: {e}")
+                    self.logger.error(f"get_video_captions: Error getting captions get_captions_thirdparty: {e}")
                 
             # if not tp_captions:
-            try:
-                google_captions = self.video_captions.get_captions_google(video_path)
-            except Exception as e:
-                self.logger.error(f"get_video_captions: Error getting captions: {e}")
+            # This is allowed only for content owners
+            # try:
+            #     google_captions = self.video_captions.get_captions_google(video_path)
+            # except Exception as e:
+            #     self.logger.error(f"get_video_captions: Error getting captions: {e}")
 
-            if not google_captions:
+            if not tp_captions:
+                try:
+                    downloaded_captions = self.video_captions.get_captions_downloadCaptions(video_path)
+                except Exception as e:
+                    self.logger.error(f"get_video_captions: Error getting captions get_captions_downloadCaptions: {e}")
+            
+            if not downloaded_captions:
                 try:
                     downloaded_captions = self.video_captions.get_captions_downloadAudio(video_path)
                 except Exception as e:
-                    self.logger.error(f"get_video_captions: Error getting captions: {e}")
+                    self.logger.error(f"get_video_captions: Error getting captions get_captions_downloadAudio: {e}")
 
             self.logger.info(f"get_video_captions: Captions: {nlp_captions}, {tp_captions}, {google_captions}, {downloaded_captions}")
             if nlp_captions:

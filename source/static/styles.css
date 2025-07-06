@@ -5,6 +5,9 @@ body {
 }
 h1 {
     color: blue;
+<<<<<<< HEAD
+}
+=======
 }
 
 h2 {
@@ -84,3 +87,4 @@ button.audio {
     /* Add margin/padding as needed */
     margin-right: 0px; /* Example: space between icon and text if you add text later */
 }
+>>>>>>> Refactor_Files
