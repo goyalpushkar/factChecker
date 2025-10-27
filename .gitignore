@@ -73,3 +73,16 @@ site-packages/
 
 # virtual environment
 venv/
+
+# Download directories
+audioFilesDirectory/
+downloadDirectory/
+captionsDirectory/
+logs/
+models/
+
+# Temporary files
+*.tmp
+*.temp  
+flask_session/
+__pycache__/

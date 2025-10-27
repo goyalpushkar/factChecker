@@ -1,0 +1,33 @@
+# MCP Server Dependencies for Fact Checker Application
+# Core MCP dependencies
+mcp>=1.0.0
+
+# Flask and web framework dependencies
+Flask>=2.3.0
+flask-session>=0.5.0
+
+# Machine Learning and NLP dependencies
+transformers>=4.30.0
+torch>=2.0.0
+nltk>=3.8.0
+
+# Database and utilities
+sqlite3  # Usually included with Python
+
+# Audio processing
+gTTS>=2.3.0
+pydub>=0.25.0
+
+# Web scraping and content extraction
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+youtube-dl>=2021.12.17
+
+# Google OAuth dependencies
+google-auth>=2.20.0
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.1.0
+
+# Additional utilities
+python-dotenv>=1.0.0
+pydantic>=2.0.0
