@@ -1,27 +1,86 @@
-transformers
-Flask 
-flask_bcrypt 
-flask_session 
-requests 
-google-auth-oauthlib 
-youtube-transcript-api
-tensorflow
-torch 
-torchvision 
+# Core MCP dependencies
+fastmcp>=0.4.1  # For fastmcp_server.py
+mcp>=1.0.0
+
+spacy>=3.7.4,<4.0.0 # Use a version of spacy compatible with Python 3.12
+thinc>=8.2.0,<8.3.0 # Use a version of thinc with Python 3.12 wheels
+typer>=0.9.0 # Required by modern spacy and fastmcp
+pydantic>=1.10.0 # Pinned to a version compatible with both spacy and fastmcp
+
+# Flask and web framework dependencies
+Flask>=2.3.0
+flask_bcrypt==1.0.1
+flask-session>=0.5.0
+python-dotenv>=1.0.0
+requests_oauthlib>=1.3.1
+# oauthlib>=3.2.2
+# httplib2>=0.22.0
+
+# Machine Learning and NLP dependencies
+transformers==4.42.3 # Pinned to a recent, stable version
+torch>=2.0.0
+torchvision
 torchaudio
-tf-keras
-spacy
-nltk
+nltk>=3.8.0
 pandas
-numpy
-multiprocessing
-bs4
-re
+numpy==1.26.4 # Pinned to a pre-2.0 version to ensure compatibility with all dependencies
 sentencepiece
 sacremoses
-gTTS
+Pillow>=10.0.0 # Image processing library required by transformers
+sympy>=1.12 # Required for certain transformers functionalities
+mpmath # Required by sympy
+defusedxml>=0.7.1 # Security for XML parsing
+pytube>=15.0.0
+tensorflow
+tf-keras
+
+# Audio processing
+gTTS>=2.3.0
+pydub>=0.25.0
 pyttsx3
-playsound
+playsound==1.2.2 # Pinned to a stable, pure-Python version to avoid build issues on macOS
+SpeechRecognition>=3.8.1 # Corrected package name (PascalCase)
+ffmpeg-python>=0.2.0
+vosk<=0.3.45 # Pinned to avoid compatibility issues with latest versions
+
+# Web scraping and content extraction
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+yt-dlp>=2024.03.08 # Preferred over the older youtube-dl
+youtube-transcript-api>=0.6.2
 readability-lxml
 lxml
 lxml_html_clean
+pyparsing>=3.1.1
+uritemplate>=4.1.1
+bs4>=0.0.1
+
+# Google OAuth dependencies
+google-auth>=2.20.0
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.1.0
+google-api-python-client>=2.70.0 # Correct package name for the googleapiclient module
+google-api-core==2.11.0
+
+regex>=2025.10.23
+blinker>=1.9.0
+jinja2>=3.1.6
+itsdangerous>=2.2.0
+bcrypt>=5.0.0
+huggingface-hub==0.23.3 # Pinned to be <1.0 for transformers compatibility
+tqdm>=4.67.1
+filelock==3.20.0
+safetensors>=0.4.3 # Required by transformers for efficient model loading
+packaging==25.0
+tokenizers>=0.19.0
+wikipedia>=1.4.0
+chardet>=5.2.0
+preshed>=3.0.9
+cymem>=2.0.7
+srsly>=2.4.6
+wasabi>=1.1.2
+rich>=13.5.2
+smart-open>=6.3.0
+brotli>=1.0.9
+pycryptodome>=3.19.0
+catalogue<2.1.0

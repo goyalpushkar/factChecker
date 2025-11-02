@@ -18,17 +18,19 @@ class Logger:
         # Get the current timestamp
         timestamp = time.strftime("%Y%m%d_%H%M")
 
-        
-        # Create a unique log file name
-        
+        # Create a unique log file name        
         # print(os.getcwd()) # Temp Print Pushkar
         # print(f"log_dir: {log_dir}") # Temp Print Pushkar
         if log_dir:
             curr_log_dir = log_dir
         else:
+            # from source.services.lib.readProperties import PropertiesReader
+            # self.properties = PropertiesReader() 
             # curr_log_dir = self.properties.get_property("folders", "log_file_path")
-            # if not curr_log_dir:
-            curr_log_dir = os.path.join(os.getcwd(), 'logs')
+            curr_log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            if not curr_log_dir:
+                curr_log_dir = os.path.join(os.getcwd(), 'logs')
+
         # print(f"curr_log_dir: {curr_log_dir}") # Temp Print Pushkar
         self.log_dir = os.path.join(curr_log_dir, f"app_{timestamp}.log")
         print(f"self.log_dir: {self.log_dir}") # Temp Print Pushkar

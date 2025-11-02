@@ -4,7 +4,6 @@ from source.services.lib.Logger import Logger
 import spacy
 import nltk
 import re
-import en_core_web_sm
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from nltk.tag import pos_tag
@@ -39,6 +38,7 @@ class NERStatementDerivation:
             # https://spacy.io/models
             # en_core_web_sm is a small English pipeline trained on written web text
             #  (blogs, news, comments), that includes vocabulary, syntax and entities.
+            # It's recommended to run the setup_models.py script to download this.
             self.spc = spacy.load("en_core_web_sm")
             self.logger.info("Spacy model 'en_core_web_sm' loaded successfully.")
         except OSError as e:
@@ -49,46 +49,8 @@ class NERStatementDerivation:
                 self.spc = spacy.load("en_core_web_sm")
                 self.logger.info("Spacy model 'en_core_web_sm' downloaded and loaded successfully.")
             except Exception as download_error:
-                self.logger.error(f"Failed to download and load 'en_core_web_sm': {download_error}")
+                self.logger.info(f"Failed to download and load 'en_core_web_sm': {download_error}")
 
-
-        # Use code with caution, suggested code may be subject to licenses
-        # https://github.com/I4-Projektseminar-HHU-2017/i4-projekt-wissenstechnologien-got-mining
-        # License unknownPowered by Gemini
-        # Download necessary NLTK resources (only need to do this once)
-        # try:
-        #     nltk.data.find('tokenizers/punkt')
-        # except LookupError:
-        #     nltk.download('punkt')
-        #     nltk.download('punkt_tab')
-        #     self.logger.info("NLTK 'punkt' tokenizer downloaded.")
-        # except Exception as e:
-        #     self.logger.error(f"Error downloading NLTK 'punkt': {e}")
-
-        # try:
-        #     nltk.data.find('tokenizers/wordnet')
-        # except LookupError:
-        #     nltk.download('wordnet')
-        #     self.logger.info("NLTK 'wordnet' tokenizer downloaded.")
-        # except Exception as e:
-        #     self.logger.error(f"Error downloading NLTK 'wordnet': {e}")
-
-        # try:
-        #     nltk.data.find('corpora/stopwords')
-        # except LookupError:
-        #     nltk.download('stopwords')
-        #     self.logger.info("NLTK 'stopwords' corpus downloaded.")
-        # except Exception as e:
-        #     self.logger.error(f"Error downloading NLTK 'stopwords': {e}")
-
-        # try:
-        #     nltk.data.find('taggers/averaged_perceptron_tagger')
-        # except LookupError:
-        #     nltk.download('averaged_perceptron_tagger')
-        #     nltk.download('averaged_perceptron_tagger_eng')
-        #     self.logger.info("NLTK 'averaged_perceptron_tagger' downloaded.")
-        # except Exception as e:
-        #     self.logger.error(f"Error downloading NLTK 'averaged_perceptron_tagger': {e}")
 
     def __str__(self):
         return f"{NERStatementDerivation.__name__}"

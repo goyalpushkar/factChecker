@@ -23,11 +23,6 @@ from mcp.types import (
     EmbeddedResource,
 )
 
-# Add the project root to sys.path for imports
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
 # Import Flask app and dependencies
 from source.views import app, db, captionDerivation, statementDerivation, summarizedStatementDerivation, factDerivation, textToAudio, authorization, logger
 from source.services.lib.utils import SourceTypes, CaptionSources, SummarizationTypes, TextToAudioSources, AvailableLanguages, AvailableCountryCodes
