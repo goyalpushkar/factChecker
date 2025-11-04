@@ -34,22 +34,22 @@ class NERStatementDerivation:
             self.utils = Utils(kwargs={"logger":self.logger, "properties":self.properties})
         
         self.spc = None  # Initialize to None
-        try:
-            # https://spacy.io/models
-            # en_core_web_sm is a small English pipeline trained on written web text
-            #  (blogs, news, comments), that includes vocabulary, syntax and entities.
-            # It's recommended to run the setup_models.py script to download this.
-            self.spc = spacy.load("en_core_web_sm")
-            self.logger.info("Spacy model 'en_core_web_sm' loaded successfully.")
-        except OSError as e:
-            self.logger.error(f"Error loading Spacy model 'en_core_web_sm': {e}")
-            self.logger.error("Attempting to download 'en_core_web_sm'...")
-            try:
-                spacy.cli.download("en_core_web_sm")
-                self.spc = spacy.load("en_core_web_sm")
-                self.logger.info("Spacy model 'en_core_web_sm' downloaded and loaded successfully.")
-            except Exception as download_error:
-                self.logger.info(f"Failed to download and load 'en_core_web_sm': {download_error}")
+        # try:
+        #     # https://spacy.io/models
+        #     # en_core_web_sm is a small English pipeline trained on written web text
+        #     #  (blogs, news, comments), that includes vocabulary, syntax and entities.
+        #     # It's recommended to run the setup_models.py script to download this.
+        #     self.spc = spacy.load("en_core_web_sm")
+        #     self.logger.info("Spacy model 'en_core_web_sm' loaded successfully.")
+        # except OSError as e:
+        #     self.logger.error(f"Error loading Spacy model 'en_core_web_sm': {e}")
+        #     self.logger.error("Attempting to download 'en_core_web_sm'...")
+        #     try:
+        #         spacy.cli.download("en_core_web_sm")
+        #         self.spc = spacy.load("en_core_web_sm")
+        #         self.logger.info("Spacy model 'en_core_web_sm' downloaded and loaded successfully.")
+        #     except Exception as download_error:
+        #         self.logger.info(f"Failed to download and load 'en_core_web_sm': {download_error}")
 
 
     def __str__(self):

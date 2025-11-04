@@ -73,9 +73,10 @@ class CaptionDerivationVideo:
             self.logger.info(f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
                             f"get_captions_nlp: video_path: {video_path}"
                             f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
-            nlp = pipeline("video-to-text", device=0)
-            captions = nlp(video_path)
-            return captions
+            # nlp = pipeline("video-to-text", device=0)
+            # captions = nlp(video_path)
+            # return captions
+            return None
         except Exception as e:
             self.logger.error(f"get_captions_nlp: Error getting captions: {e}")
             return None
@@ -99,7 +100,8 @@ class CaptionDerivationVideo:
             # This method fetches the transcript in the specified languages (e.g., 'en' for English).
             # It returns a list of dictionaries, where each dictionary represents a segment of the transcript
             # (e.g., {'text': 'Hello world', 'start': 0.0, 'duration': 1.23}).
-            captions_orig = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang_code])
+            captions_orig = ytt_api.fetch(video_id)  # Pre-fetch to check availability
+            # captions_orig = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang_code])
             
             # The result is already a list of dictionaries, no further formatting like to_raw_data() is needed
             # unless you specifically want to process the raw format from a Transcript object,
@@ -107,12 +109,12 @@ class CaptionDerivationVideo:
             self.logger.info(f"get_captions_thirdparty: Successfully fetched captions for video_id: {video_id}")
             self.logger.debug(f"get_captions_thirdparty: Captions data: {captions_orig}") # Can be verbose
             
-            self.utils.saveFile(
-                file_name=f"{video_id}_orig.json",
-                data=captions_orig,
-                directory=self.captions_directory,
-                file_format="json"
-            )
+            # self.utils.saveFile(
+            #     file_name=f"{video_id}_orig.json",
+            #     textToBeSaved=captions_orig,
+            #     directory=self.captions_directory,
+            #     file_format="json"
+            # )
             captions = captions_orig.to_raw_data()  # This will return the captions in a raw dictionary format
             
             # Verify Deprecated
@@ -235,6 +237,9 @@ class CaptionDerivationVideo:
             self.logger.info(f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
                             f"get_captions_downloadCaptions: output_dir - {output_dir}"
                             f"\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+            
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
         
             video_id = self.get_video_id(video_url)
             # self.video_captions.get_video_id(video_url)

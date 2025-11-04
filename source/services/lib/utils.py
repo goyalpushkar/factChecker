@@ -217,11 +217,11 @@ class Utils:
         try:
             # TODO: This method will be extended once GCS is added
             output_file_path = os.path.join(file_path , f"{file_name}.txt")
-            self.logger.info(f"saveFile: file_name: {file_name}"+
+            self.logger.info(f"saveFile: file_name: {file_name}\n" \
                             f"output_file_path: {output_file_path}")
-            with open(output_file_path, 'r') as file:
+            with open(output_file_path, 'w') as file:
                 file.writelines(textToBeSaved)
-            # os.write(outputFilePath, textToBeSaved, )# { encoding: 'utf-8' }
+            # os.write(output_file_path, textToBeSaved, )# { encoding: 'utf-8' }
             return True
         except Exception as e:
             self.logger.error(f"saveFile: Error occurred while saving file: {e}")

@@ -13,7 +13,6 @@ def download_spacy_models():
         except OSError:
             print(f"Downloading spaCy model: {model}")
             spacy.cli.download(model)
-            spacy.load("en_core_web_sm")
             print(f"Spacy model '{model}' downloaded and loaded successfully.")
 
 def download_nltk_packages():
