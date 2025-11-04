@@ -30,12 +30,13 @@ class FastMCPClient:
     async def connect(self):
         """Connect to the FastMCP server."""
         try:
-            self.mcp_client = Client(f"http://localhost:{self.port}")
-            await self.mcp_client.list_tools() # Test connection by listing tools
-            self.is_connected = True
-            print(f"✅ Connected to FastMCP server on port {self.port}!")
-            return True
-            
+            # Use async with to properly manage the client's lifecycle for a connection test
+            async with Client(f"http://localhost:{self.port}") as client:
+                self.mcp_client = client # Store the connected client instance
+                await self.mcp_client.list_tools() # Test connection by listing tools
+                self.is_connected = True
+                print(f"✅ Connected to FastMCP server on port {self.port}!")
+                return True
         except Exception as e:
             print(f"❌ Failed to connect to FastMCP server: {e}")
             return False

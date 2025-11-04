@@ -46,7 +46,6 @@ class CaptionDerivation:
         if not os.path.exists(self.captions_directory):
             os.makedirs(self.captions_directory)
 
-
     def __str__(self):
         return f"{CaptionDerivation.__name__}"
     
@@ -163,13 +162,13 @@ class CaptionDerivation:
                 except Exception as e:
                     self.logger.error(f"get_video_captions: Error getting captions get_captions_downloadCaptions: {e}")
             
-            if not downloaded_captions:
-                try:
-                    downloaded_captions = self.video_captions.get_captions_downloadAudio(video_path)
-                except Exception as e:
-                    self.logger.error(f"get_video_captions: Error getting captions get_captions_downloadAudio: {e}")
+                if not downloaded_captions:
+                    try:
+                        downloaded_captions = self.video_captions.get_captions_downloadAudio(video_path)
+                    except Exception as e:
+                        self.logger.error(f"get_video_captions: Error getting captions get_captions_downloadAudio: {e}")
 
-            self.logger.info(f"get_video_captions: Captions: {nlp_captions}, {tp_captions}, {google_captions}, {downloaded_captions}")
+            self.logger.info(f"get_video_captions: Captions: nlp_captions: {nlp_captions}, \n tp_captions: {tp_captions}, \n google_captions: {google_captions}, \n downloaded_captions: {downloaded_captions}")
             if nlp_captions:
                 final_captions = nlp_captions
             elif tp_captions:
@@ -187,11 +186,11 @@ class CaptionDerivation:
         
         # Save captions for future reference
         if (final_captions):
-            saveFileResult = self.utils.saveFile(video_id, file_path, final_captions)
+            saveFileResult = self.utils.saveFile(file_path, video_id, final_captions)
             if (saveFileResult):
-                self.logger.info(f"get_wiki_captions: Caption for ${video_id} are saved at ${file_path}")
+                self.logger.info(f"get_video_captions: Caption for ${video_id} are saved at ${file_path}")
             else:
-                self.logger.info(f"get_wiki_captions: Caption for ${video_id} are not saved at ${file_path}")
+                self.logger.info(f"get_video_captions: Caption for ${video_id} are not saved at ${file_path}")
 
         # will be changed later to return only one caption
         return final_captions
@@ -220,7 +219,7 @@ class CaptionDerivation:
         
         # Save captions for future reference
         if (final_captions):
-            saveFileResult = self.utils.saveFile(audio_id, file_path, final_captions)
+            saveFileResult = self.utils.saveFile(file_path, audio_id, final_captions)
             if (saveFileResult):
                 self.logger.info(f"get_audio_captions: Caption for ${audio_id} are saved at ${file_path}")
             else:
@@ -253,7 +252,7 @@ class CaptionDerivation:
 
         # Save captions for future reference
         if (final_captions):
-            saveFileResult = self.utils.saveFile(web_id, file_path, final_captions)
+            saveFileResult = self.utils.saveFile(file_path, web_id, final_captions)
             if (saveFileResult):
                 self.logger.info(f"get_wiki_captions: Caption for ${web_id} are saved at ${file_path}")
             else:

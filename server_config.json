@@ -1,0 +1,29 @@
+{
+    "mcpServers": {
+        
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "."
+            ]
+        },
+        
+        "fetch": {
+            "command": "uvx",
+            "args": ["mcp-server-fetch"]
+        },
+        
+        "fastmcp_server": {
+            "command": "uv",
+            "args": ["run", "server/fastmcp_server.py"]
+        }
+    }
+}
+
+// For the reference servers, the commands npx and uvx directly install the files of the 
+// servers to your local environment (you don't need to install them ahead of time). 
+// Note for the filesystem, the . is provided as the third argument and it means 
+// "current directory". This means that you're allowing for the fetch server to interact 
+// with the files and directories that are within the current directory

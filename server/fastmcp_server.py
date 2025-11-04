@@ -53,10 +53,6 @@ class Services:
 mcp = FastMCP("fact-checker-fastmcp")
 services = Services()
 
-# Load NLP model
-from transformers import pipeline
-nlp = pipeline("text-classification", model="bert-base-uncased")
-
 def _get_content_from_source(
     youtube_video_url: Optional[str] = None,
     video_url: Optional[str] = None,
@@ -254,6 +250,16 @@ def text_to_speech(text: str, action: Optional[str] = None) -> str:
     
     return json.dumps({"speech_path": speech_path}, indent=2)
 
+@mcp.tool()
+def get_status() -> str:
+    """Get the status of the FastMCP Fact Checker server."""
+    return "Server Running" 
+
+
+# Load NLP model after all tools are defined to avoid initialization conflicts
+from transformers import pipeline
+nlp = pipeline("text-classification", model="bert-base-uncased")
+
 if __name__ == "__main__":
     import sys
     
@@ -268,5 +274,6 @@ if __name__ == "__main__":
             sys.exit(1)
     
     print(f"🚀 Starting FastMCP Fact Checker Server on port {port}...")
-    mcp.run(port=port, transport='streamable-http',
-            proxy_token=os.environ.get("MCP_PROXY_TOKEN"))
+    mcp.run(transport='stdio')
+    # port=port, 
+    # proxy_token=os.environ.get("MCP_PROXY_TOKEN"
