@@ -1,0 +1,26 @@
+# MCP Client Dependencies for Fact Checker Application
+# Core MCP client dependencies
+mcp>=1.0.0
+
+# Async support
+asyncio  # Built-in with Python 3.7+
+
+# Process management
+subprocess  # Built-in
+
+# Type hints and utilities
+typing  # Built-in with Python 3.5+
+
+# JSON handling
+json  # Built-in
+
+# File and path operations
+os  # Built-in
+sys  # Built-in
+
+# Date and time utilities
+datetime  # Built-in
+
+# Threading support
+threading  # Built-in
+time  # Built-in

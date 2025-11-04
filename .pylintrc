@@ -1,0 +1,4 @@
+[MAIN]
+# Add the project root to Pylint's path to resolve absolute imports.
+# This allows finding modules like 'source' and 'models'.
+init-hook='import sys; sys.path.append(".")'

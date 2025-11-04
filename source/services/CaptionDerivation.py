@@ -93,10 +93,10 @@ class CaptionDerivation:
 
         if caption_source == CaptionSources.NLP:
             nlp_captions = self.video_captions.get_captions_nlp(video_path)
-            if nlp_captions:
-                self.db.insert_captions_cache(video_id, nlp_captions)
+            # if nlp_captions:
+            #     self.db.insert_captions_cache(video_id, nlp_captions)
 
-            return nlp_captions
+            final_captions = nlp_captions
         elif caption_source == CaptionSources.THIRD_PARTY:
             tp_captions = self.video_captions.get_captions_thirdparty(video_path)
             final_tp_captions = ""
@@ -109,7 +109,7 @@ class CaptionDerivation:
             # if tp_captions:
             #     self.db.insert_captions_cache(video_id, tp_captions)
             
-            return tp_captions  
+            final_captions = tp_captions  
         elif caption_source == CaptionSources.GOOGLE:
             # google_captions = self.video_captions.get_captions_google(video_path)
             google_captions = self.video_captions.get_captions_downloadAudio(video_path)
@@ -118,7 +118,7 @@ class CaptionDerivation:
             # if google_captions:
             #     self.db.insert_captions_cache(video_id, google_captions)
 
-            return google_captions
+            final_captions = google_captions
         elif caption_source == CaptionSources.DOWNLOAD:
             downloaded_captions = self.video_captions.get_captions_downloadCaptions(video_path)
 
@@ -129,7 +129,7 @@ class CaptionDerivation:
             # if google_captions:
             #     self.db.insert_captions_cache(video_id, google_captions)
 
-            return downloaded_captions
+            final_captions = downloaded_captions
         else:
             try:
                 nlp_captions = self.video_captions.get_captions_nlp(video_path)
