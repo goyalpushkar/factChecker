@@ -10,6 +10,8 @@ import os
 import wikipedia
 from bs4 import *
 import requests
+# Added on 11/23/2025 - Pushkar
+from urllib.request import Request, urlopen
 from flask import jsonify
 from readability import Document # <-- Import readability
 
@@ -188,9 +190,9 @@ class CaptionDerivation:
         if (final_captions):
             saveFileResult = self.utils.saveFile(file_path, video_id, final_captions)
             if (saveFileResult):
-                self.logger.info(f"get_video_captions: Caption for ${video_id} are saved at ${file_path}")
+                self.logger.info(f"get_video_captions: Caption for {video_id} are saved at {file_path}")
             else:
-                self.logger.info(f"get_video_captions: Caption for ${video_id} are not saved at ${file_path}")
+                self.logger.info(f"get_video_captions: Caption for {video_id} are not saved at {file_path}")
 
         # will be changed later to return only one caption
         return final_captions
@@ -312,17 +314,23 @@ class CaptionDerivation:
             }
 
             # Send an HTTP GET request to the URL
-            response = requests.get(source_path, headers=headers, timeout=30) # Added timeout
+            # Modified on 11/23/2025 - Pushkar
+            summary_html = ""
+            try:
+                response = requests.get(source_path, headers=headers, timeout=30) # Added timeout
+                # Use readability to parse and identify the main content
+                doc = Document(response.content) # Pass the raw byte content
+                summary_html = doc.summary() # Gets the cleaned HTML of the main content
+                self.logger.info(f"get_web_captions: doc: {doc}\nsummary_html: {summary_html}")
+            except Exception as e:
+                self.logger.warning(f"get_web_captions: requests.get failed, trying urllib: {e}")
+                request = Request(source_path, headers=headers)
+                summary_html = urlopen(request).read() # Added timeout
 
             # Raise an exception for bad status codes (4xx or 5xx)
-            response.raise_for_status()
+            # response.raise_for_status()
 
-            # Use readability to parse and identify the main content
-            doc = Document(response.content) # Pass the raw byte content
-            summary_html = doc.summary() # Gets the cleaned HTML of the main content
-            self.logger.info(f"get_web_captions: doc: {doc}\nsummary_html: {summary_html}")
-
-
+            
             # Parse the HTML content using Beautiful Soup
             # Use response.content for bytes, let BS4 handle encoding detection
             # Or use response.text if you are sure about the encoding
@@ -344,7 +352,7 @@ class CaptionDerivation:
                 self.logger.warning(f"get_web_captions: Readability found no primary content in \
                                     {source_path}. Falling back to full body text.")
                 # Fallback to your original method if readability fails
-                return self.get_full_body_text(response.content)
+                return self.get_full_body_text(summary_html)  # response.content
 
             # --- Optional: Further refinement (Example: get text only from <p> tags) ---
             # paragraphs = soup.find_all('p')

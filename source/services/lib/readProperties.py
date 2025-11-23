@@ -12,12 +12,13 @@ class PropertiesReader:
         Args:
             file_path (str): The path to the properties file.
         """
-        if 'logger' in kwargs:
-            self.logger = kwargs['logger']
-        else:
-            self.loging = Logger()
-            self.logger = self.loging.get_logger()
-
+        # if 'logger' in kwargs:
+        #     self.logger = kwargs['logger']
+        # else:
+        #     self.loging = Logger()
+        #     self.logger = self.loging.get_logger()
+        self.loging = Logger()
+        self.logger = self.loging.get_logger()
         if file_path is None:
             file_path = "/Users/goyalpushkar/GitHub/factChecker/config.properties"
 

@@ -84,3 +84,5 @@ smart-open>=6.3.0
 brotli>=1.0.9
 pycryptodome>=3.19.0
 catalogue<2.1.0
+aisuite>=0.1.0
+anthropic>=0.7.0
