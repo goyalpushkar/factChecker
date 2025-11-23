@@ -81,8 +81,10 @@ captionsDirectory/
 logs/
 models/
 
+config.properties
+
 # Temporary files
 *.tmp
 *.temp  
 flask_session/
-__pycache__/
+__pycache__/config.properties

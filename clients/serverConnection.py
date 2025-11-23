@@ -21,7 +21,7 @@ class ToolDefinition(TypedDict):
 
 class ServerConnection:
 
-    def __init__(self):
+    def __init__(self, server_config_path: str = "../server_config.json"):
         # Initialize session and client objects
         # self.sessions: List[ClientSession] = [] # new
         self.exit_stack = AsyncExitStack() # new
@@ -32,7 +32,17 @@ class ServerConnection:
         self.available_prompts = []
         # Sessions dict maps tool/prompt names or resource URIs to MCP client sessions
         self.sessions = {}
+        self.server_config_path = server_config_path # new
 
+    async def __aenter__(self):
+        """Connect to all configured MCP servers when entering the async context."""
+        await self.connect_to_servers()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Cleanly close all resources managed by the exit stack when exiting the async context."""
+        await self.exit_stack.aclose()
+    
     async def connect_to_server(self, server_name: str, server_config: dict) -> None:
         """Connect to a single MCP server."""
         try:
@@ -60,7 +70,10 @@ class ServerConnection:
                 self.available_tools.append({
                     "name": tool.name,
                     "description": tool.description,
-                    "input_schema": tool.inputSchema
+                    "input_schema": {
+                        "type": "object",
+                        "properties": tool.inputSchema.get("properties", {})
+                    }
                 })
 
             # List available prompts
@@ -87,7 +100,7 @@ class ServerConnection:
     async def connect_to_servers(self): # new
         """Connect to all configured MCP servers."""
         try:
-            with open("server_config.json", "r") as file:
+            with open(f"{self.server_config_path}", "r") as file:
                 data = json.load(file)
             
             servers = data.get("mcpServers", {})
